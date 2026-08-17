@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
 
 st.set_page_config(page_title="Block 3 Energy Dashboard", layout="wide", page_icon="⚡", initial_sidebar_state="expanded")
@@ -197,9 +196,16 @@ col_floor1, col_floor2 = st.columns([1.3, 1])
 with col_floor1:
     floor_names = list(floor_shares.keys())
     floor_weekly = [actual_weekly * s for s in floor_shares.values()]
-    fig_floor = go.Figure(go.Bar(x=floor_names, y=floor_weekly, marker_color=['#F87171','#FB923C','#FBBF24']))
+    fig_floor = go.Figure(go.Bar(
+        x=floor_weekly, y=floor_names, orientation='h',
+        marker_color=['#F87171', '#FB923C', '#FBBF24'],
+        text=[f"{v:,.0f} kWh" for v in floor_weekly],
+        textposition='outside',
+    ))
     fig_floor.update_layout(title="Weekly Energy Consumption by Floor (kWh)", template='plotly_dark', height=320,
-        plot_bgcolor='#171B26', paper_bgcolor='rgba(0,0,0,0)', font_color='#E5E9F0')
+        margin=dict(l=10, r=70, t=50, b=10),
+        plot_bgcolor='#171B26', paper_bgcolor='rgba(0,0,0,0)', font_color='#E5E9F0',
+        xaxis_title="kWh/week", yaxis=dict(autorange="reversed"))
     st.plotly_chart(fig_floor, use_container_width=True)
 
 with col_floor2:
@@ -313,91 +319,13 @@ with col_bim:
 
 with col_emissions:
     st.markdown("#### Floor-Wise Emission Load Intensity")
-    
-    # Precise U-shape geometry parameters per floor level
-    # Wing dimensions
-    floor_levels = [
-        ('Ground Floor', 0, 3.5, floor_shares['Ground Floor'], '#F87171'),
-        ('1st Floor', 3.5, 7.0, floor_shares['1st Floor'], '#FB923C'),
-        ('Top Floor', 7.0, 10.5, floor_shares['Top Floor'], '#FBBF24')
-    ]
-    
-    fig_u = go.Figure()
-    
-    # Draw U-shape floor slabs
-    for name, z0, z1, share, color in floor_levels:
-        co2_val = total_co2_net_grid * share
-        # Main rear wing (X: 0 to 40, Y: 18 to 26)
-        # Left wing (X: 0 to 10, Y: 0 to 18)
-        # Right wing (X: 30 to 40, Y: 0 to 18)
-        # Courtyard opening is (X: 10 to 30, Y: 0 to 18)
-        
-        # Rear Block
-        fig_u.add_trace(go.Mesh3d(
-            x=[0, 40, 40, 0, 0, 40, 40, 0],
-            y=[18, 18, 26, 26, 18, 18, 26, 26],
-            z=[z0, z0, z0, z0, z1, z1, z1, z1],
-            i=[0,0,0,4,4,4,0,0,1,1,2,2], j=[1,2,3,5,6,7,1,5,2,6,3,7], k=[2,3,1,6,7,4,5,4,6,5,7,6],
-            color=color, opacity=0.88, name=f"{name} (Rear)",
-            hovertext=f"{name}<br>{share*100:.1f}% Load Share<br>{co2_val:.1f} tCO2/yr", hoverinfo='text',
-            showlegend=False
-        ))
-        
-        # Left Wing
-        fig_u.add_trace(go.Mesh3d(
-            x=[0, 10, 10, 0, 0, 10, 10, 0],
-            y=[0, 0, 18, 18, 0, 0, 18, 18],
-            z=[z0, z0, z0, z0, z1, z1, z1, z1],
-            i=[0,0,0,4,4,4,0,0,1,1,2,2], j=[1,2,3,5,6,7,1,5,2,6,3,7], k=[2,3,1,6,7,4,5,4,6,5,7,6],
-            color=color, opacity=0.88, name=f"{name} (West Wing)",
-            hovertext=f"{name} (West Wing)<br>{share*100:.1f}% Load Share", hoverinfo='text',
-            showlegend=False
-        ))
-        
-        # Right Wing
-        fig_u.add_trace(go.Mesh3d(
-            x=[30, 40, 40, 30, 30, 40, 40, 30],
-            y=[0, 0, 18, 18, 0, 0, 18, 18],
-            z=[z0, z0, z0, z0, z1, z1, z1, z1],
-            i=[0,0,0,4,4,4,0,0,1,1,2,2], j=[1,2,3,5,6,7,1,5,2,6,3,7], k=[2,3,1,6,7,4,5,4,6,5,7,6],
-            color=color, opacity=0.88, name=f"{name} (East Wing)",
-            hovertext=f"{name} (East Wing)<br>{share*100:.1f}% Load Share", hoverinfo='text',
-            showlegend=False
-        ))
+    try:
+        st.image("block3_floor_emission_render.png",
+                  caption="Block 3 — floor-colored elevation render (Ground/1st/Top, from Revit)",
+                  use_container_width=True)
+    except Exception:
+        st.info("Place 'block3_floor_emission_render.png' in your project root directory to display this render. "
+                 "In Revit: color each floor by a filter/legend matching the dashboard palette "
+                 "(Ground=#F87171 red, 1st=#FB923C orange, Top=#FBBF24 yellow), export an isometric/elevation view as PNG.")
 
-    # Courtyard Plinth Base
-    fig_u.add_trace(go.Mesh3d(
-        x=[10, 30, 30, 10], y=[0, 0, 18, 18], z=[0, 0, 0, 0],
-        i=[0], j=[1], k=[2], color='#4B5165', opacity=0.5, name='Central Courtyard',
-        hovertext="Open Courtyard", hoverinfo='text', showlegend=False
-    ))
-
-    # Dynamic Plume above roof
-    np.random.seed(42)
-    n_p = 35
-    fig_u.add_trace(go.Scatter3d(
-        x=np.random.uniform(5, 35, n_p),
-        y=np.random.uniform(5, 24, n_p),
-        z=np.random.uniform(11, 11 + (total_co2_final / 75), n_p),
-        mode='markers',
-        marker=dict(size=5, color='rgba(180,180,180,0.6)', symbol='circle'),
-        name='Emissions Plume', hovertext=f"Total: {total_co2_final:.1f} tCO2/yr", hoverinfo='text'
-    ))
-
-    fig_u.update_layout(
-        scene=dict(
-            xaxis=dict(visible=False),
-            yaxis=dict(visible=False),
-            zaxis=dict(title='Height (m)', color='#E5E9F0'),
-            aspectmode='data',
-            camera=dict(eye=dict(x=1.6, y=-1.6, z=1.2))
-        ),
-        template='plotly_dark',
-        height=450,
-        margin=dict(l=0, r=0, t=10, b=0),
-        paper_bgcolor='rgba(0,0,0,0)',
-        font_color='#E5E9F0'
-    )
-    st.plotly_chart(fig_u, use_container_width=True)
-
-st.markdown("<p class='note-text'>Left: BIM architectural wireframe with central courtyard. Right: BIM-based spatial energy/emission visualization — floor volumes colored by equipment-schedule-derived load share, not a thermal simulation.</p>", unsafe_allow_html=True)
+st.markdown("<p class='note-text'>Left: BIM architectural wireframe with central courtyard. Right: floor-colored elevation render from Revit, matching the equipment-schedule-derived load share by floor — not a thermal simulation.</p>", unsafe_allow_html=True)
