@@ -11,7 +11,7 @@ st.markdown("""
     .stApp { background-color: #0B0E14; }
     .metric-card { background: linear-gradient(135deg, #171B26 0%, #1F2433 100%); border: 1px solid #2A3040; border-radius: 14px; padding: 18px; }
     .metric-label { font-size: 12px; color: #9BA3B8; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-    .metric-value { font-size: 26px; font-weight: 700; color: #F5F7FA; margin-top: 6px; }
+    .metric-value { font-size: clamp(18px, 4.5vw, 26px); font-weight: 700; color: #F5F7FA; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .metric-sub { font-size: 12px; color: #4ADE80; margin-top: 4px; font-weight: 500; }
     .section-header { color: #E5E9F0; font-size: 15px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 28px; margin-bottom: 12px; font-weight: 700; border-left: 3px solid #378ADD; padding-left: 10px; }
     .desc-text { color: #C4CAD9 !important; font-size: 14px; line-height: 1.6; }
@@ -38,6 +38,24 @@ st.markdown("""<div class='metric-card' style='margin-bottom:18px;'>
 🟠 <b>Estimated Allocation</b>: Block 3 solar share, floor-wise emissions &nbsp;|&nbsp;
 ⚪ <b>Assumption</b>: emission factors, operating hours, future growth rates
 </p></div>""", unsafe_allow_html=True)
+
+# ============ METHODOLOGY & DATA PROVENANCE ============
+with st.expander("📋 Methodology & Data Provenance — read before presenting"):
+    st.markdown("""
+**Why does Block 3's estimated annual electricity (~1.09M kWh) look close to the whole campus audit total (1,524,486 kVAh/yr)?**
+
+These two numbers are **not directly comparable** and should not be read as "Block 3 = ~71% of campus load":
+
+- The campus audit figure (1,524,486 kVAh/yr, Apr 2021–Mar 2022) is a **measured utility bill total** for the entire campus, across all blocks, hostels, and staff quarters.
+- The Block 3 figure (~1.09M kWh/yr) is an **ML model output**: an XGBoost model trained on the BDG2 dataset (604 education buildings, US-based, general-purpose archetypes), fed Block 3's physical attributes (area, floors, age) and local weather, then scaled by a single-week calibration factor to match Block 3's audited weekly energy.
+- The model was **not constrained to sum to any share of the campus total**. Its output is a scenario estimate built from a generalized archetype model, not a bottom-up validated measurement of Block 3 alone.
+- The connected-load share (Block 3 = 278 kW of 2,494 kW campus total, ~11.15%) describes **peak connected capacity**, not annual energy consumed — a building can have a small share of connected load but a large share of actual usage if its equipment runs more hours (Block 3's UPS/lab equipment mostly runs continuously, unlike hostels/staff quarters which are used part of the day).
+- **Recommended framing for viva**: present the campus audit total as a *reference envelope* for context, and the Block 3 ML estimate as a separate, independently-calibrated scenario — do not imply the two are on the same accounting basis.
+
+**Units — kVAh vs kWh**
+
+The audit reports campus electricity in kVAh, not kWh. Per the audit, average campus power factor ≈ 0.99, so kVAh ≈ kWh at this site to within ~1%. All Block 3 figures in this dashboard are computed and reported directly in kWh (from the ML model and equipment schedule), so no conversion was applied to those — this note is only to clarify why the audit's campus-level unit differs from the dashboard's building-level unit.
+    """)
 
 # ============ SIDEBAR CONTROLS ============
 st.sidebar.header("🎛️ Model Controls")
@@ -189,7 +207,7 @@ with col_floor2:
         <div class='metric-label'>Highest Consuming Level</div>
         <div class='metric-value' style='font-size:20px;'>Ground Floor</div>
         <div class='metric-sub' style='color:#F87171;'>75.5% of Total Load (from equipment schedule)</div>
-        <p class='desc-text' style='margin-top:12px;'>Computed from the room-level equipment inventory. Major ground-floor loads: Central UPS banks (36 kW, 54 kW), substation transformers, and Electrical Machines/Power Systems lab motors.</p>
+        <p class='desc-text' style='margin-top:12px;'>Floor split is read directly from the 'Floor Level' column of the audited room-level equipment schedule (not a BIM-inferred assignment). Major ground-floor loads: Central UPS banks (36 kW, 54 kW), substation transformers, and Electrical Machines/Power Systems lab motors.</p>
     </div>""", unsafe_allow_html=True)
 
 # ============ CONSUMPTION PATTERNS ============
@@ -230,9 +248,11 @@ with col_b:
     temp_binned['temp_mid'] = [interval.mid for interval in temp_binned['temperature_C']]
     fig3 = go.Figure(go.Scatter(x=temp_binned['temp_mid'], y=temp_binned['predicted_electricity_kwh'], mode='lines+markers',
         line_color='#4ADE80', fill='tozeroy', fillcolor='rgba(74,222,128,0.1)'))
-    fig3.update_layout(title="Model-Derived Temperature Sensitivity (not measured Block 3 behavior)", template='plotly_dark', height=340,
+    fig3.update_layout(title="Temperature Sensitivity (Model-Derived)", template='plotly_dark', height=340,
+        margin=dict(l=10, r=10, t=50, b=40),
         plot_bgcolor='#171B26', paper_bgcolor='rgba(0,0,0,0)', font_color='#E5E9F0')
     st.plotly_chart(fig3, use_container_width=True)
+    st.caption("Not measured Block 3 behavior — reflects the trained model's general temperature response.")
 
 # ============ FLOOR-WISE EMISSIONS BREAKDOWN ============
 st.markdown("<div class='section-header'>Floor-Wise CO2 Emissions Breakdown</div>", unsafe_allow_html=True)
@@ -243,22 +263,22 @@ floor_co2 = {
     'Top Floor': total_co2_net_grid * floor_shares['Top Floor'],
 }
 
-fig_treemap = go.Figure(go.Treemap(
-    labels=list(floor_co2.keys()),
-    parents=[""] * len(floor_co2),
-    values=list(floor_co2.values()),
-    marker=dict(colors=['#F87171', '#FB923C', '#FBBF24'], line=dict(width=2, color='#0B0E14')),
-    textinfo="label+value+percent root",
-    texttemplate="<b>%{label}</b><br>%{value:.1f} tCO2/yr<br>%{percentRoot}",
-    textfont=dict(color='#0B0E14', size=15),
+fig_treemap = go.Figure(go.Bar(
+    x=list(floor_co2.values()),
+    y=list(floor_co2.keys()),
+    orientation='h',
+    marker_color=['#F87171', '#FB923C', '#FBBF24'],
+    text=[f"{v:.1f} tCO2/yr ({v/total_co2_net_grid*100:.0f}%)" for v in floor_co2.values()],
+    textposition='outside',
 ))
 fig_treemap.update_layout(
-    title=f"Estimated CO2 Emissions by Floor (Grid Share Only, Total: {total_co2_final:,.1f} tCO2/yr net)",
-    template='plotly_dark', height=340, margin=dict(l=10, r=10, t=50, b=10),
-    paper_bgcolor='rgba(0,0,0,0)', font_color='#E5E9F0'
+    title="Estimated CO2 Emissions by Floor (Grid Share Only)",
+    template='plotly_dark', height=280, margin=dict(l=10, r=80, t=50, b=10),
+    plot_bgcolor='#171B26', paper_bgcolor='rgba(0,0,0,0)', font_color='#E5E9F0',
+    xaxis_title="tCO2/yr", yaxis=dict(autorange="reversed")
 )
 st.plotly_chart(fig_treemap, use_container_width=True)
-st.markdown("<p class='note-text'>Estimated allocation: floor-wise share of grid-electricity CO2, based on the equipment schedule's weekly-energy split. Diesel CO2 is campus-level and not separately allocated by floor.</p>", unsafe_allow_html=True)
+st.markdown(f"<p class='note-text'>Total net footprint: {total_co2_final:,.1f} tCO2/yr. Floor split computed directly from the 'Floor Level' column in the audited room-level equipment schedule (626 rows), not inferred from the BIM model. Diesel CO2 is campus-level and not separately allocated by floor.</p>", unsafe_allow_html=True)
 
 # ============ FUTURE PROJECTION ============
 st.markdown("<div class='section-header'>Future Outlook (Dynamic Projections)</div>", unsafe_allow_html=True)
@@ -279,3 +299,105 @@ st.markdown(f"<p class='desc-text'>Model: XGBoost (R²=0.898 on held-out BDG2 ed
 
 
 
+# ============ 3D BUILDING & EMISSION VISUALIZATION ============
+st.markdown("<div class='section-header'>BIM-Integrated Building Performance Model & Emission Distribution</div>", unsafe_allow_html=True)
+
+col_bim, col_emissions = st.columns([1.2, 1])
+
+with col_bim:
+    st.markdown("#### Architectural BIM Model (Courtyard Layout)")
+    try:
+        st.image("block3_render.png", caption="Block 3 (GMRIT) — gbXML Geometry with Open Central Courtyard", use_container_width=True)
+    except Exception:
+        st.info("Place 'block3_render.png' in your project root directory to display the BIM model.")
+
+with col_emissions:
+    st.markdown("#### Floor-Wise Emission Load Intensity")
+    
+    # Precise U-shape geometry parameters per floor level
+    # Wing dimensions
+    floor_levels = [
+        ('Ground Floor', 0, 3.5, floor_shares['Ground Floor'], '#F87171'),
+        ('1st Floor', 3.5, 7.0, floor_shares['1st Floor'], '#FB923C'),
+        ('Top Floor', 7.0, 10.5, floor_shares['Top Floor'], '#FBBF24')
+    ]
+    
+    fig_u = go.Figure()
+    
+    # Draw U-shape floor slabs
+    for name, z0, z1, share, color in floor_levels:
+        co2_val = total_co2_net_grid * share
+        # Main rear wing (X: 0 to 40, Y: 18 to 26)
+        # Left wing (X: 0 to 10, Y: 0 to 18)
+        # Right wing (X: 30 to 40, Y: 0 to 18)
+        # Courtyard opening is (X: 10 to 30, Y: 0 to 18)
+        
+        # Rear Block
+        fig_u.add_trace(go.Mesh3d(
+            x=[0, 40, 40, 0, 0, 40, 40, 0],
+            y=[18, 18, 26, 26, 18, 18, 26, 26],
+            z=[z0, z0, z0, z0, z1, z1, z1, z1],
+            i=[0,0,0,4,4,4,0,0,1,1,2,2], j=[1,2,3,5,6,7,1,5,2,6,3,7], k=[2,3,1,6,7,4,5,4,6,5,7,6],
+            color=color, opacity=0.88, name=f"{name} (Rear)",
+            hovertext=f"{name}<br>{share*100:.1f}% Load Share<br>{co2_val:.1f} tCO2/yr", hoverinfo='text',
+            showlegend=False
+        ))
+        
+        # Left Wing
+        fig_u.add_trace(go.Mesh3d(
+            x=[0, 10, 10, 0, 0, 10, 10, 0],
+            y=[0, 0, 18, 18, 0, 0, 18, 18],
+            z=[z0, z0, z0, z0, z1, z1, z1, z1],
+            i=[0,0,0,4,4,4,0,0,1,1,2,2], j=[1,2,3,5,6,7,1,5,2,6,3,7], k=[2,3,1,6,7,4,5,4,6,5,7,6],
+            color=color, opacity=0.88, name=f"{name} (West Wing)",
+            hovertext=f"{name} (West Wing)<br>{share*100:.1f}% Load Share", hoverinfo='text',
+            showlegend=False
+        ))
+        
+        # Right Wing
+        fig_u.add_trace(go.Mesh3d(
+            x=[30, 40, 40, 30, 30, 40, 40, 30],
+            y=[0, 0, 18, 18, 0, 0, 18, 18],
+            z=[z0, z0, z0, z0, z1, z1, z1, z1],
+            i=[0,0,0,4,4,4,0,0,1,1,2,2], j=[1,2,3,5,6,7,1,5,2,6,3,7], k=[2,3,1,6,7,4,5,4,6,5,7,6],
+            color=color, opacity=0.88, name=f"{name} (East Wing)",
+            hovertext=f"{name} (East Wing)<br>{share*100:.1f}% Load Share", hoverinfo='text',
+            showlegend=False
+        ))
+
+    # Courtyard Plinth Base
+    fig_u.add_trace(go.Mesh3d(
+        x=[10, 30, 30, 10], y=[0, 0, 18, 18], z=[0, 0, 0, 0],
+        i=[0], j=[1], k=[2], color='#4B5165', opacity=0.5, name='Central Courtyard',
+        hovertext="Open Courtyard", hoverinfo='text', showlegend=False
+    ))
+
+    # Dynamic Plume above roof
+    np.random.seed(42)
+    n_p = 35
+    fig_u.add_trace(go.Scatter3d(
+        x=np.random.uniform(5, 35, n_p),
+        y=np.random.uniform(5, 24, n_p),
+        z=np.random.uniform(11, 11 + (total_co2_final / 75), n_p),
+        mode='markers',
+        marker=dict(size=5, color='rgba(180,180,180,0.6)', symbol='circle'),
+        name='Emissions Plume', hovertext=f"Total: {total_co2_final:.1f} tCO2/yr", hoverinfo='text'
+    ))
+
+    fig_u.update_layout(
+        scene=dict(
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            zaxis=dict(title='Height (m)', color='#E5E9F0'),
+            aspectmode='data',
+            camera=dict(eye=dict(x=1.6, y=-1.6, z=1.2))
+        ),
+        template='plotly_dark',
+        height=450,
+        margin=dict(l=0, r=0, t=10, b=0),
+        paper_bgcolor='rgba(0,0,0,0)',
+        font_color='#E5E9F0'
+    )
+    st.plotly_chart(fig_u, use_container_width=True)
+
+st.markdown("<p class='note-text'>Left: BIM architectural wireframe with central courtyard. Right: BIM-based spatial energy/emission visualization — floor volumes colored by equipment-schedule-derived load share, not a thermal simulation.</p>", unsafe_allow_html=True)
