@@ -213,33 +213,33 @@ with tab_exec:
         st.plotly_chart(fig_gauge, use_container_width=True)
         status = "✓ Within ±10% calibration-week consistency band" if abs(nmbe) <= 10 else "✗ Outside calibration-week consistency band"
         st.markdown(f"<p class='desc-text' style='text-align:center; font-weight:600; color:{'#4ADE80' if abs(nmbe)<=10 else '#F87171'};'>{status}</p>", unsafe_allow_html=True)
-
+        
 # ----------------- TAB 2: 3D BIM ARCHITECTURE -----------------
 with tab_bim:
     st.markdown("<div class='section-header'>BIM Architecture & Level-by-Level Cutaways</div>", unsafe_allow_html=True)
-    st.markdown("<p class='desc-text'>Interactive Revit BIM architectural representation linked directly to the room-level equipment schedule and load shares.</p>", unsafe_allow_html=True)
+    st.markdown("<p class='desc-text'>Interactive Revit BIM architectural front-view representations linked directly to the room-level equipment schedule and load shares.</p>", unsafe_allow_html=True)
 
     floor_views = {
-        "Full Building (Isometric)": {
-            "img": "block3_render.png",
+        "Full Building (Front View)": {
+            "img": "total block front view.jpeg",
             "share": "100% of Building Demand",
             "weekly_energy": f"{actual_weekly:,.0f} kWh/wk",
             "description": "Reinforced concrete institutional frame (G+2 levels with open central courtyard), 2,594.7 m² built-up area built in 1998."
         },
-        "Ground Floor Cutaway": {
-            "img": "block3_floor_emission_render.png",
+        "Ground Floor Cut (Front View)": {
+            "img": "ground floor cut front view.jpeg",
             "share": "75.5% of Total Load",
             "weekly_energy": f"{actual_weekly * floor_shares['Ground Floor']:,.0f} kWh/wk",
             "description": "High-draw zone containing Central UPS banks (36 kW, 54 kW continuous draw), substation step-down transformers, and Electrical Machines / Power Systems lab motors."
         },
-        "1st Floor Cutaway": {
-            "img": "block3_render.png",
+        "1st Floor Cut (Front View)": {
+            "img": "first floor cut front view.jpeg",
             "share": "18.2% of Total Load",
             "weekly_energy": f"{actual_weekly * floor_shares['1st Floor']:,.0f} kWh/wk",
             "description": "Mid-draw academic zone featuring computer labs, departmental lecture classrooms, and faculty rooms."
         },
-        "Top Floor Cutaway": {
-            "img": "block3_render.png",
+        "2nd / Top Floor Cut (Front View)": {
+            "img": "2nd floor cut front view.jpeg",
             "share": "6.3% of Total Load",
             "weekly_energy": f"{actual_weekly * floor_shares['Top Floor']:,.0f} kWh/wk",
             "description": "Low-draw zone housing seminar halls, department library, and rooftop solar electrical tie-ins."
@@ -247,18 +247,18 @@ with tab_bim:
     }
 
     selected_level = st.radio(
-        "Select Revit View / Level to Inspect:",
+        "Select Revit Cut Section / Level to Inspect:",
         options=list(floor_views.keys()),
         horizontal=True
     )
 
-    col_view, col_meta = st.columns([1.5, 1])
+    col_view, col_meta = st.columns([1.6, 1])
     with col_view:
         view_data = floor_views[selected_level]
         if os.path.exists(view_data["img"]):
-            st.image(view_data["img"], caption=f"Revit BIM View — {selected_level}", use_container_width=True)
+            st.image(view_data["img"], caption=f"Revit BIM Model — {selected_level}", use_container_width=True)
         else:
-            st.info(f"Place '{view_data['img']}' in your project root folder to display this architectural render.")
+            st.warning(f"Image `{view_data['img']}` not found in repository root. Check that the filename matches exactly.")
 
     with col_meta:
         st.markdown(f"""
