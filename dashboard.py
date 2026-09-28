@@ -610,43 +610,18 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
     <li><b>Fan/lighting operating-hour review in low-occupancy spaces:</b> Regular checks that spaces like Electrical Labs and Drawing Halls (scheduled ~8 hrs/week) are powered off when idle.</li>
     </ul>
     </div>""", unsafe_allow_html=True)
-    import json
-import numpy as np
-
-def m(mod):
+    def m(mod):
     p = mod.predict(X_test)
 
+    y = np.asarray(y_test)
+    p = np.asarray(p)
+
+    mae = np.mean(np.abs(y - p))
+    rmse = np.sqrt(np.mean((y - p) ** 2))
+    r2 = 1 - np.sum((y - p) ** 2) / np.sum((y - np.mean(y)) ** 2)
+
     return {
-        "r2": float(r2_score(y_test, p)),
-        "mae_kwh": float(mean_absolute_error(y_test, p)),
-        "rmse_kwh": float(np.sqrt(np.mean((y_test - p) ** 2)))
+        "r2": float(r2),
+        "mae_kwh": float(mae),
+        "rmse_kwh": float(rmse)
     }
-
-gain = model.get_booster().get_score(importance_type="gain")
-
-tot = sum(gain.values())
-
-metrics = {
-    "features_used": FEATURES,
-    "xgboost": m(model),
-    "baseline_linear_regression": m(lr),
-    "feature_importance": {
-        k: round(v / tot, 4)
-        for k, v in sorted(
-            gain.items(),
-            key=lambda kv: -kv[1]
-        )
-    },
-    "train_samples": int(len(X_train)),
-    "test_samples": int(len(X_test)),
-    "n_buildings": 604
-}
-
-json.dump(
-    metrics,
-    open(
-        os.path.join(OUT_DIR, "model_metrics.json"),
-        "w"
-    ),
-    indent=2
-)
