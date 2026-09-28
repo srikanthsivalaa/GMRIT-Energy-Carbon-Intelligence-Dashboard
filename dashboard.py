@@ -54,7 +54,7 @@ st.markdown("""
 # ============ HEADER ============
 st.title("⚡ Block 3 — GMRIT Energy & Carbon Intelligence Dashboard")
 st.markdown("<p class='desc-text'>ML framework for predicting electricity consumption and carbon footprint | XGBoost calibrated to available GMRIT energy-audit data</p>", unsafe_allow_html=True)
-st.markdown("<span class='badge-info'>Held-out BDG2 Reference-Dataset R² = 0.898 (NOT Block 3 validation)</span><span class='badge-info'>Calibrated to 1-Week Audit Anchor</span><span class='badge-warn'>EUI: Retrofit Potential</span>", unsafe_allow_html=True)
+st.markdown("<span class='badge-info'>Held-out BDG2 Reference-Dataset R² = 0.898 (NOT Block 3 validation)</span><span class='badge-info'>Calibrated to Campus Annual Audit (11.15% Block 3 share)</span><span class='badge-info'>EUI benchmarked vs ECBC reference</span>", unsafe_allow_html=True)
 
 # ============ SIDEBAR CONTROLS ============
 st.sidebar.header("🎛️ Model Controls")
@@ -63,7 +63,7 @@ usage_growth = st.sidebar.slider("Annual usage growth (%)", 0.0, 5.0, 2.0, 0.5)
 climate_trend = st.sidebar.slider("Climate warming trend (%)", 0.0, 2.0, 0.5, 0.1)
 st.sidebar.markdown("---")
 show_solar = st.sidebar.checkbox("Include solar PV offset", value=True)
-st.sidebar.caption("Estimated Block 3 Solar Allocation — based on 11.15% connected-load share; Block 3-specific solar metering unavailable. Campus total (867,317 + 261,417 kWh/yr) is measured; the Block 3 share is a scenario allocation, not a measured Block 3 quantity.")
+st.sidebar.caption("Estimated Block 3 Solar Allocation — based on 11.15% connected-load share; Block 3-specific solar metering unavailable. Campus solar used on site (867,317 generated − 261,417 exported = 605,900 kWh/yr) is from the audit; the Block 3 share is a scenario allocation, not a measured Block 3 quantity.")
 st.sidebar.markdown("---")
 projection_years = st.sidebar.slider("Projection horizon (years)", 1, 10, 3)
 st.sidebar.markdown("---")
@@ -85,8 +85,10 @@ campus_load_kw = 2494
 block3_load_kw = 278
 block3_share = block3_load_kw / campus_load_kw  # 11.15%
 
-campus_solar_generation_kwh = 867317 + 261417  # 1,128,734 kWh/yr total campus solar
-block3_solar_offset_kwh = (campus_solar_generation_kwh * block3_share) if show_solar else 0.0
+campus_solar_generated_kwh = 867317
+campus_solar_exported_kwh = 261417
+campus_solar_used_kwh = campus_solar_generated_kwh - campus_solar_exported_kwh  # 605,900 kWh/yr used on campus
+block3_solar_offset_kwh = (campus_solar_used_kwh * block3_share) if show_solar else 0.0
 
 total_kwh = predictions['predicted_electricity_kwh'].sum()
 block3_solar_offset_kwh = min(block3_solar_offset_kwh, total_kwh)
@@ -113,22 +115,28 @@ else:
 
 carbon_intensity = (total_co2_block3_electricity * 1000) / block3_sqm  # kgCO2/sqm/yr
 
-# Calibration Metrics
-actual_weekly = 23853.03
-predicted_weekly = predictions['predicted_electricity_kwh'].iloc[:168].sum()
-nmbe = ((predicted_weekly - actual_weekly) / actual_weekly) * 100
+# Calibration Metrics (annual campus-share anchor)
+CAMPUS_ANNUAL_KWH = 1524486  # audit, Apr 2021-Mar 2022 (kVAh ~ kWh, PF ~0.99)
+ANNUAL_ANCHOR_KWH = CAMPUS_ANNUAL_KWH * block3_share  # Block 3 share of campus annual consumption
+EQUIP_SCHEDULE_WEEKLY = 23839.90  # nameplate x scheduled hours; used ONLY for the floor-wise split
+avg_weekly_kwh = total_kwh / (len(predictions) / 168)
+nmbe = ((total_kwh - ANNUAL_ANCHOR_KWH) / ANNUAL_ANCHOR_KWH) * 100  # ~0 by construction
+
 
 floor_shares = {'Ground Floor': 0.75501, '1st Floor': 0.18176, 'Top Floor': 0.06323}
 
-# 1-Week Anchor Hourly Analysis
-SCALING_FACTOR = 1.7312
+
+# Calibration factor and first-week view
+SCALING_FACTOR = 0.271081  # raw XGBoost -> annual anchor
 calibrated_week = predictions['predicted_electricity_kwh'].iloc[:168].reset_index(drop=True)
 raw_week = calibrated_week / SCALING_FACTOR
 hours_axis = list(range(168))
 raw_weekly_total = raw_week.sum()
 calibrated_weekly_total = calibrated_week.sum()
-diff_before_pct = ((raw_weekly_total - actual_weekly) / actual_weekly) * 100
-diff_after_pct = ((calibrated_weekly_total - actual_weekly) / actual_weekly) * 100
+raw_annual_kwh = total_kwh / SCALING_FACTOR
+diff_before_pct = ((raw_annual_kwh - ANNUAL_ANCHOR_KWH) / ANNUAL_ANCHOR_KWH) * 100
+diff_after_pct = nmbe
+
 
 # ============ EXECUTIVE SUMMARY BANNER ============
 solar_pct = (block3_solar_offset_kwh / total_kwh) * 100 if total_kwh > 0 else 0
@@ -141,7 +149,7 @@ with st.container():
         <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; color: #D8DFEE; font-size: 13px;'>
             <div>⚡ <b>Energy Sourcing:</b> Total ML demand is <b>{total_kwh:,.0f} kWh</b>. Solar offsets <b>{solar_pct:.1f}%</b> ({block3_solar_offset_kwh:,.0f} kWh), leaving <b>{net_grid_kwh:,.0f} kWh</b> on grid.</div>
             <div>🌱 <b>Carbon Footprint:</b> Solar avoids <b>{solar_co2_avoided:,.1f} tCO₂/yr</b>. Electricity emissions stand at <b>{total_co2_block3_electricity:,.1f} tCO₂/yr</b> ({carbon_intensity:.1f} kgCO₂/m²).</div>
-            <div>🏢 <b>Primary Load Node:</b> Ground Floor accounts for <b>75.5%</b> of weekly load ({actual_weekly * floor_shares['Ground Floor']:,.0f} kWh/wk) driven by central UPS banks.</div>
+            <div>🏢 <b>Primary Load Node:</b> Ground Floor accounts for <b>75.5%</b> of weekly load ({avg_weekly_kwh * floor_shares['Ground Floor']:,.0f} kWh/wk) driven by central UPS banks.</div>
             <div>📊 <b>Building Index:</b> Net Grid EUI is <b>{eui_net:.1f} kWh/m²/yr</b> ({ecbc_rating}).</div>
         </div>
     </div>
@@ -154,7 +162,7 @@ tab_exec, tab_bim, tab_flow, tab_floor, tab_proj, tab_calib, tab_audit = st.tabs
     "🔀 Energy Flow (Sankey)",
     "🏢 Floor Breakdown & Carbon",
     "📈 Forecast & Patterns",
-    "🔍 1-Week Calibration Analysis",
+    "🔍 Calibration Analysis",
     "📋 Audit, ML & Retrofits"
 ])
 
@@ -208,7 +216,7 @@ with tab_exec:
     with col_gauge:
         fig_gauge = go.Figure(go.Indicator(
             mode="gauge+number", value=abs(nmbe),
-            title={'text': "NMBE (%) — Calibration Consistency (Threshold ±10%)", 'font': {'color': '#E5E9F0', 'size': 12}},
+            title={'text': "NMBE (%) — Annual Calibration Consistency (Threshold ±10%)", 'font': {'color': '#E5E9F0', 'size': 12}},
             number={'font': {'color': '#F5F7FA', 'size': 26}, 'suffix': '%'},
             gauge={
                 'axis': {'range': [0, 20], 'tickcolor': '#9BA3B8', 'tickfont': {'color': '#9BA3B8'}},
@@ -219,7 +227,7 @@ with tab_exec:
         ))
         fig_gauge.update_layout(height=310, paper_bgcolor='rgba(0,0,0,0)', margin=dict(t=50, b=10, l=20, r=20))
         st.plotly_chart(fig_gauge, use_container_width=True)
-        status = "✓ Within ±10% calibration-week consistency band" if abs(nmbe) <= 10 else "✗ Outside calibration-week consistency band"
+        status = "✓ Within ±10% annual calibration consistency band" if abs(nmbe) <= 10 else "✗ Outside annual calibration consistency band"
         st.markdown(f"<p class='desc-text' style='text-align:center; font-weight:600; color:{'#4ADE80' if abs(nmbe)<=10 else '#F87171'};'>{status}</p>", unsafe_allow_html=True)
 
 # ----------------- TAB 2: 3D BIM ARCHITECTURE -----------------
@@ -231,25 +239,25 @@ with tab_bim:
         "Full Building (Front View)": {
             "img": "total block front view.jpeg",
             "share": "100% of Building Demand",
-            "weekly_energy": f"{actual_weekly:,.0f} kWh/wk",
+            "weekly_energy": f"{avg_weekly_kwh:,.0f} kWh/wk",
             "description": "Reinforced concrete institutional frame (G+2 levels with open central courtyard), 2,594.7 m² built-up area built in 1998."
         },
         "Ground Floor Cut (Front View)": {
             "img": "ground floor cut front view.jpeg",
             "share": "75.5% of Total Load",
-            "weekly_energy": f"{actual_weekly * floor_shares['Ground Floor']:,.0f} kWh/wk",
+            "weekly_energy": f"{avg_weekly_kwh * floor_shares['Ground Floor']:,.0f} kWh/wk",
             "description": "High-draw zone containing Central UPS banks (36 kW, 54 kW continuous draw), substation step-down transformers, and Electrical Machines / Power Systems lab motors."
         },
         "1st Floor Cut (Front View)": {
             "img": "first floor cut front view.jpeg",
             "share": "18.2% of Total Load",
-            "weekly_energy": f"{actual_weekly * floor_shares['1st Floor']:,.0f} kWh/wk",
+            "weekly_energy": f"{avg_weekly_kwh * floor_shares['1st Floor']:,.0f} kWh/wk",
             "description": "Mid-draw academic zone featuring computer labs, departmental lecture classrooms, and faculty rooms."
         },
         "2nd / Top Floor Cut (Front View)": {
             "img": "2nd floor cut front view.jpeg",
             "share": "6.3% of Total Load",
-            "weekly_energy": f"{actual_weekly * floor_shares['Top Floor']:,.0f} kWh/wk",
+            "weekly_energy": f"{avg_weekly_kwh * floor_shares['Top Floor']:,.0f} kWh/wk",
             "description": "Low-draw zone housing seminar halls, department library, and rooftop solar electrical tie-ins."
         }
     }
@@ -338,7 +346,7 @@ with tab_floor:
 
     with col_floor1:
         floor_names = list(floor_shares.keys())
-        floor_weekly = [actual_weekly * s for s in floor_shares.values()]
+        floor_weekly = [avg_weekly_kwh * s for s in floor_shares.values()]
         fig_floor = go.Figure(go.Bar(
             x=floor_weekly, y=floor_names, orientation='h',
             marker_color=['#F87171', '#FB923C', '#FBBF24'],
@@ -436,10 +444,10 @@ with tab_proj:
     st.plotly_chart(fig4, use_container_width=True)
     st.markdown(f"<p class='note-text'>Scenario projection under assumed future usage growth ({usage_growth}%/yr) and climate trend ({climate_trend}%/yr), not a measured or guaranteed forecast. Excludes diesel (campus-level, held constant, not projected here). Audit baseline year: Apr 2021–Mar 2022. Weather data reference period differs from the audit year.</p>", unsafe_allow_html=True)
 
-# ----------------- TAB 6: 1-WEEK CALIBRATION ANALYSIS -----------------
+# ----------------- TAB 6: CALIBRATION ANALYSIS -----------------
 with tab_calib:
-    st.markdown("<div class='section-header'>1-Week Actual vs ML-Predicted Analysis</div>", unsafe_allow_html=True)
-    st.info("**Important:** This is a calibration consistency check, not independent validation, because the same week was used to calibrate the model.")
+    st.markdown("<div class='section-header'>Annual Calibration Analysis — Campus-Share Anchor</div>", unsafe_allow_html=True)
+    st.info("**Important:** The model output is scaled so its annual total equals Block 3's share (11.15%) of the audited campus consumption. The match is therefore true by construction — a consistency check, not independent validation.")
 
     fig_1wk = go.Figure()
     fig_1wk.add_trace(go.Scatter(
@@ -451,7 +459,7 @@ with tab_calib:
         line=dict(color='#378ADD', width=2)
     ))
     fig_1wk.update_layout(
-        title="Hourly Raw vs Calibrated Prediction — Anchor Week",
+        title="Hourly Raw vs Calibrated Prediction — First Week of Weather Data",
         template='plotly_dark', height=360,
         margin=dict(l=10, r=10, t=50, b=40),
         plot_bgcolor='#171B26', paper_bgcolor='rgba(0,0,0,0)', font_color='#E5E9F0',
@@ -460,25 +468,30 @@ with tab_calib:
     st.plotly_chart(fig_1wk, use_container_width=True)
 
     st.markdown(f"""<div class='metric-card' style='margin-top:4px;'>
-    <div class='metric-label'>Audited/Actual Weekly Energy (Measured/Audited)</div>
-    <div class='metric-value' style='font-size:24px;'>{actual_weekly:,.2f} kWh</div>
-    <div class='metric-sub'>Weekly aggregate derived from the equipment schedule; no hourly measured profile is available for this week, so it is not plotted as an hourly line above.</div>
+    <div class='metric-label'>Audit-Share Annual Anchor (Estimated Allocation)</div>
+    <div class='metric-value' style='font-size:24px;'>{ANNUAL_ANCHOR_KWH:,.0f} kWh</div>
+    <div class='metric-sub'>Campus consumption {CAMPUS_ANNUAL_KWH:,.0f} kWh × {block3_share*100:.2f}% Block 3 connected-load share. This is an allocation, not a Block 3 meter reading.</div>
     </div>""", unsafe_allow_html=True)
 
     st.markdown("<p style='margin-top:14px; margin-bottom:8px;' class='desc-text'><b>Summary Metrics</b></p>", unsafe_allow_html=True)
     m1, m2, m3 = st.columns(3)
     with m1:
-        st.markdown(f"<div class='metric-card'><div class='metric-label'>Actual Weekly Total (Measured/Audited)</div><div class='metric-value' style='font-size:20px;'>{actual_weekly:,.2f} kWh</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='metric-card' style='margin-top:8px;'><div class='metric-label'>Raw ML Weekly Total (pre-calibration)</div><div class='metric-value' style='font-size:20px;'>{raw_weekly_total:,.2f} kWh</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card'><div class='metric-label'>Audit-Share Annual Anchor</div><div class='metric-value' style='font-size:20px;'>{ANNUAL_ANCHOR_KWH:,.0f} kWh</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card' style='margin-top:8px;'><div class='metric-label'>Raw ML Annual Total (pre-calibration)</div><div class='metric-value' style='font-size:20px;'>{raw_annual_kwh:,.0f} kWh</div></div>", unsafe_allow_html=True)
     with m2:
-        st.markdown(f"<div class='metric-card'><div class='metric-label'>Calibrated ML Weekly Total</div><div class='metric-value' style='font-size:20px;'>{calibrated_weekly_total:,.2f} kWh</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card'><div class='metric-label'>Calibrated ML Annual Total</div><div class='metric-value' style='font-size:20px;'>{total_kwh:,.0f} kWh</div></div>", unsafe_allow_html=True)
         st.markdown(f"<div class='metric-card' style='margin-top:8px;'><div class='metric-label'>Calibration Factor</div><div class='metric-value' style='font-size:20px;'>{SCALING_FACTOR}</div></div>", unsafe_allow_html=True)
     with m3:
         st.markdown(f"<div class='metric-card'><div class='metric-label'>Difference Before Calibration</div><div class='metric-value' style='font-size:20px;'>{diff_before_pct:+.2f}%</div></div>", unsafe_allow_html=True)
         st.markdown(f"<div class='metric-card' style='margin-top:8px;'><div class='metric-label'>Difference After Calibration (NMBE)</div><div class='metric-value' style='font-size:20px;'>{diff_after_pct:+.2f}%</div></div>", unsafe_allow_html=True)
 
-    st.caption("CV(RMSE) is not reported here: RMSE requires multiple actual-vs-predicted residual pairs at the same time resolution. Only a single weekly aggregate actual value exists for Block 3 — there is no hourly actual series to pair against the hourly predictions — so CV(RMSE) cannot be correctly calculated and is not fabricated here.")
-    st.markdown("<p class='note-text' style='margin-top:10px;'>The calibrated prediction is expected to closely match the one-week measured/audited value because this week was used as the calibration anchor. Therefore, this comparison demonstrates calibration consistency rather than independent model validation.</p>", unsafe_allow_html=True)
+    st.markdown(f"""<div class='metric-card' style='margin-top:14px; border-left:3px solid #FBBF24;'>
+    <div class='metric-label' style='color:#FBBF24;'>Why the equipment schedule is not the calibration target</div>
+    <p class='desc-text' style='margin-top:6px;'>The audited equipment schedule (rated power × scheduled hours) totals {EQUIP_SCHEDULE_WEEKLY:,.2f} kWh/week, about {EQUIP_SCHEDULE_WEEKLY*52:,.0f} kWh/year, which would be {EQUIP_SCHEDULE_WEEKLY*52/CAMPUS_ANNUAL_KWH*100:.0f}% of the entire campus consumption. It assumes equipment runs at rated power for all scheduled hours, so it overstates real energy use. It is used only for the floor-wise shares.</p>
+    </div>""", unsafe_allow_html=True)
+
+    st.caption("CV(RMSE) is not reported: there is no measured Block 3 hourly or monthly electricity series to pair with the predictions, so it cannot be correctly calculated and is not fabricated here.")
+    st.markdown("<p class='note-text' style='margin-top:10px;'>The calibrated annual total equals the audit-share anchor because the model was scaled to it. This demonstrates calibration consistency, not independent model validation. Absolute values depend on the 11.15% load-share assumption and carry roughly ±10% uncertainty from the campus audit figures.</p>", unsafe_allow_html=True)
 
 # ----------------- TAB 7: AUDIT, ML & RETROFITS -----------------
 with tab_audit:
@@ -497,21 +510,19 @@ with tab_audit:
     The weather dataset used to drive the ML model is <b>Jul 2025–Jul 2026</b> (NASA POWER, local coordinates).
     These are different periods. The annual Block 3 electricity figure on this dashboard is therefore a
     <b>calibrated scenario estimate</b> — the model's weather-driven pattern for a recent year, rescaled to match
-    the audited weekly energy level — and should not be read as a reconstruction of actual Apr 2021–Mar 2022
+    Block 3's share of the audited campus annual energy — and should not be read as a reconstruction of actual Apr 2021–Mar 2022
     Block 3 consumption.</p>
     </div>""", unsafe_allow_html=True)
 
     with st.expander("📋 Methodology & Data Provenance — read before presenting", expanded=False):
         st.markdown("""
-**Why does Block 3's estimated annual electricity (~1.09M kWh) look close to the whole campus audit total (1,524,486 kVAh/yr)?**
-
-These two numbers are **not directly comparable** and should not be read as "Block 3 = ~71% of campus load":
+**How is Block 3's annual electricity (~170 MWh) derived, and how does it relate to the campus audit total (1,524,486 kVAh/yr)?**
 
 - The campus audit figure (1,524,486 kVAh/yr, Apr 2021–Mar 2022) is a **measured utility bill total** for the entire campus, across all blocks, hostels, and staff quarters.
-- The Block 3 figure (~1.09M kWh/yr) is an **ML model output**: an XGBoost model trained on the BDG2 dataset (604 education buildings, US-based, general-purpose archetypes), fed Block 3's physical attributes (area, floors, age) and local weather, then scaled by a single-week calibration factor to match Block 3's audited weekly energy.
-- The model was **not constrained to sum to any share of the campus total**. Its output is a scenario estimate built from a generalized archetype model, not a bottom-up validated measurement of Block 3 alone.
-- The connected-load share (Block 3 = 278 kW of 2,494 kW campus total, ~11.15%) describes **peak connected capacity**, not annual energy consumed — a building can have a small share of connected load but a large share of actual usage if its equipment runs more hours (Block 3's UPS/lab equipment mostly runs continuously, unlike hostels/staff quarters which are used part of the day).
-- **Recommended framing for viva**: present the campus audit total as a *reference envelope* for context, and the Block 3 ML estimate as a separate, independently-calibrated scenario — do not imply the two are on the same accounting basis.
+- **Block 3 annual anchor = campus total × 11.15%** (Block 3's connected-load share: 278 kW of 2,494 kW) ≈ 169,931 kWh. This is an **allocation**, not a Block 3 meter reading.
+- An XGBoost model trained on BDG2 (604 education buildings, US-based archetypes) supplies the **hourly and seasonal shape** from Block 3's weather and physical attributes. A single scaling factor (0.271) sets the annual total equal to the anchor.
+- The connected-load share describes **peak connected capacity**, not energy consumed. If Block 3 runs more hours than other blocks its true share could be higher; totals scale linearly with the share (for example 15% would give about 229 MWh). The campus source figures also differ by about 10% (grid + solar used + diesel = 1.67M vs 1.52M kWh reported), so treat the anchor as roughly ±10%.
+- The audited equipment schedule (23,840 kWh/week, rated power × scheduled hours) would imply Block 3 uses about 81% of campus energy, so it overstates real use and is used **only for the floor-wise split**.
 
 **Units — kVAh vs kWh**
 
@@ -563,7 +574,7 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
 
     st.markdown("""<div class='metric-card' style='margin-top:14px; border-left:3px solid #F87171;'>
     <div class='metric-label' style='color:#F87171;'>Domain Limitation</div>
-    <p class='desc-text' style='margin-top:8px;'>The XGBoost model is trained entirely on the BDG2 dataset (604 education buildings, predominantly North American/European campuses). Block 3 (GMRIT, Rajam - Warm & Humid climate) is <b>not represented in the training data</b>. The one-week audit anchor is used only to <i>calibrate</i> output magnitude to audited weekly energy. BDG2 performance (R²=0.898) reflects generalization across BDG2 buildings, not direct Block 3 out-of-sample accuracy.</p>
+    <p class='desc-text' style='margin-top:8px;'>The XGBoost model is trained entirely on the BDG2 dataset (604 education buildings, predominantly North American/European campuses). Block 3 (GMRIT, Rajam - Warm & Humid climate) is <b>not represented in the training data</b>. The campus annual audit share (11.15% of 1,524,486 kWh) is used only to <i>calibrate</i> output magnitude. BDG2 performance (R²=0.898) reflects generalization across BDG2 buildings, not direct Block 3 out-of-sample accuracy.</p>
     </div>""", unsafe_allow_html=True)
 
     st.markdown("""<div class='metric-card' style='margin-top:14px; border-left:3px solid #F87171;'>
