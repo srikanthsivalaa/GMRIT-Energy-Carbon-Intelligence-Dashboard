@@ -447,3 +447,108 @@ with tab_audit:
 <div class='group-title' style='margin-top:6px;'>SV-to-LED lighting replacement</div>
 <div class='body'>Audited campus retrofit. Replacing sodium-vapor/CFL fixtures with LEDs.</div>
 """, unsafe_allow_html=True)
+import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+import json
+import os
+
+st.set_page_config(
+    page_title="Block 3 Energy Intelligence",
+    layout="wide",
+    page_icon="⚡",
+    initial_sidebar_state="expanded"
+)
+
+# Custom responsive CSS to fix scale, alignment and fonts
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=Public+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --paper: #ECEBE6;
+  --ink: #1B2421;
+  --ink2: #4A5753;
+  --rule: #C9C8C0;
+  --green: #1F4E45;
+}
+
+html, body, [data-testid="stAppViewContainer"] {
+    background-color: var(--paper) !important;
+    font-family: 'Public Sans', sans-serif !important;
+    color: var(--ink) !important;
+}
+
+/* Fix main container squeeze */
+.block-container, [data-testid="stMainBlockContainer"] {
+    max-width: 100% !important;
+    padding: 2rem 3rem !important;
+}
+
+/* Header typography fix */
+.masthead-title {
+    font-family: 'Archivo', sans-serif;
+    font-size: 32px !important;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 4px;
+}
+
+.masthead-sub {
+    font-size: 15px !important;
+    color: var(--ink2);
+    margin-bottom: 20px;
+}
+
+/* Sidebar Fixes */
+[data-testid="stSidebar"] {
+    background-color: #E1DFD8 !important;
+    border-right: 1px solid var(--rule);
+}
+
+/* Tab Headers */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 20px;
+    border-bottom: 2px solid var(--rule);
+}
+
+.stTabs [data-baseweb="tab"] {
+    font-size: 15px !important;
+    font-weight: 600;
+    color: var(--ink2);
+}
+
+.stTabs [aria-selected="true"] {
+    color: var(--green) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Main Title Section
+st.markdown("""
+<div class='masthead-title'>Block 3 energy intelligence</div>
+<div class='masthead-sub'>GMRIT, Rajam. Electricity demand and carbon footprint from an XGBoost model calibrated to the campus energy audit.</div>
+""", unsafe_allow_html=True)
+
+# Sidebar Controls
+st.sidebar.header("Model controls")
+emission_factor = st.sidebar.slider("CEA Grid Emission Factor (tCO2/MWh)", 0.65, 0.80, 0.710, 0.001)
+usage_growth = st.sidebar.slider("Annual usage growth (%)", 0.0, 5.0, 2.0, 0.5)
+climate_trend = st.sidebar.slider("Climate warming trend (%)", 0.0, 2.0, 0.5, 0.1)
+show_solar = st.sidebar.checkbox("Include solar PV offset", value=True)
+projection_years = st.sidebar.slider("Projection horizon (years)", 1, 10, 3)
+
+# Main Tabs Navigation
+tabs = st.tabs([
+    "Overview", 
+    "Building", 
+    "Energy flow", 
+    "Floors and carbon", 
+    "Forecast", 
+    "Calibration", 
+    "Audit and retrofits"
+])
+
+with tabs[0]:
+    st.subheader("Overview Metrics")
+    st.info("Dashboard elements loaded properly with responsive scaling.")
