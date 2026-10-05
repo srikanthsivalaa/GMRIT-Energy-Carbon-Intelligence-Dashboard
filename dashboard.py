@@ -733,82 +733,118 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
 - **Lab/classroom equipment power-down enforcement:** Enforcing an equipment shutdown checklist after scheduled lab/class hours prevents after-hours idle draw.
 - **Fan/lighting operating-hour review in low-occupancy spaces:** Regular checks that spaces like Electrical Labs and Drawing Halls (scheduled ~8 hrs/week) are powered off when idle.
 """)
-# Streamlit Dashboard file (app.py) ki bilkul last lo add cheyandi:
+import streamlit as st
+
+# Ensure wide layout is enabled in Streamlit configuration
+# st.set_page_config(layout="wide")
 
 st.markdown("""
 <style>
 /* ==========================================================================
-   VIEWPORT FIT ADJUSTMENTS (FINAL PASS)
+   STRICT TYPOGRAPHY & COMPOSITION CORRECTION (NO STRETCH / PRESERVE SIZES)
    ========================================================================== */
 
-/* 1. Streamlit Main Container Fix */
+/* 1. Controlled Page Container (75-90% Viewport Width, Centered) */
 .block-container {
-  max-width: 95% !important;
-  padding-top: 1.5rem !important;
-  padding-bottom: 1.5rem !important;
-  padding-left: 2rem !important;
-  padding-right: 2rem !important;
+    max-width: 1440px !important; /* Prevents ultra-wide stretching */
+    width: 88% !important;
+    margin: 0 auto !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
 }
 
-/* 2. Expand Main Dashboard Container */
-.dashboard-container,
-.main-wrapper,
-#app-root {
-  width: 100% !important;
-  max-width: 1760px !important;
-  min-height: calc(100vh - 40px);
-  margin: 0 auto !important;
-  padding: 24px 32px !important;
-  box-sizing: border-box !important;
+/* 2. Strict Typography Enforcements */
+html, body, [class*="css"], .stMarkdown, p, div {
+    font-size: 13px !important; /* Base body font size (12-13px) */
+    line-height: 1.55 !important;
+    letter-spacing: 0.15px !important;
 }
 
-/* 3. Optimize Main Layout Grid / Sections Spacing */
-.dashboard-grid,
-.main-content-layout,
-div[data-testid="stHorizontalBlock"] {
-  display: flex !important;
-  gap: 24px !important;
-  width: 100% !important;
+/* Main Page Title (20–24 px) */
+h1, .main-title, div[data-testid="stHeader"] h1 {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    margin-bottom: 12px !important;
 }
 
-/* 4. Dynamic Chart Scaling */
-.chart-container,
-.chart-card,
-.stPlotlyChart {
-  width: 100% !important;
-  min-height: 380px !important;
-  display: flex !important;
-  flex-direction: column !important;
+/* Section Headings (14–16 px) */
+h2, h3, .section-header, div[data-testid="stMarkdownContainer"] h2, div[data-testid="stMarkdownContainer"] h3 {
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    margin-top: 18px !important;
+    margin-bottom: 10px !important;
 }
 
-.chart-container canvas,
-.chart-container svg,
-.chart-wrapper {
-  flex: 1 1 auto !important;
-  width: 100% !important;
-  height: 100% !important;
+/* KPI Numbers (36–44 px) */
+div[data-testid="stMetricValue"] {
+    font-size: 38px !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
 }
 
-/* 5. Column Proportions & Flex Cards */
-.card,
-.kpi-card,
-.widget-panel,
+/* KPI Labels (12–13 px) */
+div[data-testid="stMetricLabel"] {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    margin-bottom: 4px !important;
+}
+
+/* Sidebar Labels/Text (11–12 px) */
+section[data-testid="stSidebar"] * {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+}
+
+/* Chart Axis Labels & Secondary Text (10–12 px) */
+.small-note, .caption, div[data-testid="stCaptionContainer"] {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+}
+
+/* 3. Balanced KPI Grouping (Compact & Connected, Not Stretched Edge-to-Edge) */
+div[data-testid="stHorizontalBlock"]:has(div[data-testid="stMetric"]) {
+    max-width: 900px !important; /* Keeps the 3 KPIs tight and visually connected */
+    gap: 32px !important;
+    margin-top: 12px !important;
+    margin-bottom: 24px !important;
+}
+
 div[data-testid="stMetric"] {
-  height: 100% !important;
-  padding: 20px 24px !important;
-  box-sizing: border-box !important;
+    background: transparent !important;
+    padding: 0 !important;
 }
 
-/* 6. Section & Row Spacing Alignment */
-.dashboard-section,
-.row {
-  margin-bottom: 24px !important;
-  width: 100% !important;
+/* 4. Controlled Explanation & Body Text Width (500–750 px max) */
+.stMarkdown p, .explanation-text {
+    max-width: 720px !important;
+    text-align: left !important;
 }
 
-.dashboard-section:last-child,
-.row:last-child {
-  margin-bottom: 0 !important;
+/* 5. Chart Proportions & Spacing (Monthly Electricity Chart) */
+.stPlotlyChart, .stVegaLiteChart, .stElementContainer:has(.stPlotlyChart) {
+    max-width: 100% !important;
+    min-height: 400px !important; /* Slightly taller for vertical fill without horizontal distortion */
+    margin-top: 8px !important;
+    margin-bottom: 20px !important;
 }
+
+/* 6. Supporting Figures (2 Clean Aligned Columns) */
+.supporting-figures-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 40px !important;
+    max-width: 1100px !important;
+    margin-top: 16px !important;
+}
+
+/* Vertical Rhythm & Section Spacing */
+.element-container, div[data-testid="stVerticalBlock"] > div {
+    margin-bottom: 12px !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
