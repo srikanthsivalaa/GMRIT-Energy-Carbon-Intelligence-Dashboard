@@ -610,18 +610,3 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
     <li><b>Fan/lighting operating-hour review in low-occupancy spaces:</b> Regular checks that spaces like Electrical Labs and Drawing Halls (scheduled ~8 hrs/week) are powered off when idle.</li>
     </ul>
     </div>""", unsafe_allow_html=True)
-    def m(mod):
-    p = mod.predict(X_test)
-
-    y = np.asarray(y_test)
-    p = np.asarray(p)
-
-    mae = np.mean(np.abs(y - p))
-    rmse = np.sqrt(np.mean((y - p) ** 2))
-    r2 = 1 - np.sum((y - p) ** 2) / np.sum((y - np.mean(y)) ** 2)
-
-    return {
-        "r2": float(r2),
-        "mae_kwh": float(mae),
-        "rmse_kwh": float(rmse)
-    }
