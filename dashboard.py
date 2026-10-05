@@ -48,6 +48,21 @@ st.markdown("""
         color: #60A5FA !important;
         border-bottom: 2px solid #60A5FA !important;
     }
+    /* BIM tab: radio visibility (text only) */
+.stRadio [data-testid="stWidgetLabel"] p {
+    color: #E5E9F0 !important;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+.stRadio div[role="radiogroup"] {
+    gap: 18px;
+}
+.stRadio div[role="radiogroup"] label p {
+    color: #E5E9F0 !important;
+    font-size: 14.5px;
+    font-weight: 500;
+}
 </style>
 """, unsafe_allow_html=True)
 
