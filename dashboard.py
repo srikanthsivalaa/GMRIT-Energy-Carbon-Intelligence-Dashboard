@@ -26,7 +26,7 @@ STEEL = "#5B6B73"      # grid electricity
 BRICK = "#A5442F"      # warnings / limitations
 FONT = "Public Sans, Helvetica Neue, Arial, sans-serif"
 
-# ============ STYLING ============
+# ============ STYLING & COMPOSITION CORRECTIONS ============
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,300..700&family=Public+Sans:wght@400;500;600&display=swap');
@@ -35,84 +35,140 @@ st.markdown("""
   --paper:#ECEBE6; --ink:#1B2421; --ink2:#4A5753; --ink3:#5A6561; --rule:#C9C8C0;
   --green:#1F4E45; --solar:#C98A1B; --brick:#A5442F; --steel:#5B6B73;
 }
-.stApp { background: var(--paper); color: var(--ink); font-family: 'Public Sans', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.5; }
+
+/* 1. Natural Viewport Frame (85% Width, Centered) */
+.stApp { background: var(--paper); color: var(--ink); font-family: 'Public Sans', 'Helvetica Neue', Arial, sans-serif; }
 header[data-testid="stHeader"] { background: transparent; }
 #MainMenu, footer { visibility: hidden; }
-.block-container, [data-testid="stMainBlockContainer"] { max-width: 1200px !important; margin: 0 auto; padding: 1.5rem 2rem 3rem 2rem; }
-.stApp p, .stApp li, .stApp label, .stApp span { color: var(--ink); font-size: 13px; }
 
-/* ---- sidebar ---- */
+.block-container, [data-testid="stMainBlockContainer"] { 
+    max-width: 1280px !important; 
+    width: 85% !important;
+    margin: 0 auto !important; 
+    padding: 2rem 2rem 3rem 2rem !important; 
+}
+
+/* 2. Non-Negotiable Rule #1: Exact Readable Typography Sizes */
+html, body, [class*="css"], .stApp p, .stApp li, .stApp label, .stApp span {
+    font-size: 13px !important;
+    line-height: 1.55 !important;
+    color: var(--ink);
+}
+
+/* Sidebar Labels & Text (11-12px) */
 [data-testid="stSidebar"] { background: #E1DFD8; border-right: 1px solid var(--rule); }
 [data-testid="stSidebar"][aria-expanded="true"] { width: 268px !important; min-width: 268px !important; max-width: 268px !important; }
-[data-testid="stSidebar"] h2 { font-family: 'Archivo', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: 0; }
+[data-testid="stSidebar"] h2 { font-family: 'Archivo', sans-serif; font-weight: 600; font-size: 16px !important; letter-spacing: 0; }
+[data-testid="stSidebar"] * { font-size: 12px !important; line-height: 1.4 !important; }
 [data-testid="stSidebar"] hr { border-color: var(--rule); margin: 12px 0; }
-[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color: var(--ink3); font-size: 10px; }
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color: var(--ink3); font-size: 11px !important; }
 
-/* ---- masthead ---- */
-.masthead-title { font-family: 'Archivo', sans-serif; font-stretch: 85%; font-weight: 600; font-size: 24px; letter-spacing: -0.01em; line-height: 1.15; color: var(--ink); }
-.masthead-sub { margin-top: 4px; color: var(--ink2); font-size: 13px; max-width: 72ch; line-height: 1.45; }
+/* Main Masthead Title (20–24 px) */
+.masthead-title { 
+    font-family: 'Archivo', sans-serif; 
+    font-stretch: 85%; 
+    font-weight: 600; 
+    font-size: 24px !important; 
+    letter-spacing: -0.01em; 
+    line-height: 1.2 !important; 
+    color: var(--ink); 
+}
 
-/* ---- tabs: text only, one underline ---- */
+.masthead-sub { 
+    margin-top: 6px; 
+    color: var(--ink2); 
+    font-size: 13px !important; 
+    max-width: 720px !important; 
+    line-height: 1.45 !important; 
+}
+
+/* Tabs Styling */
 .stTabs [data-baseweb="tab-list"] { gap: 24px; border-bottom: 1px solid var(--rule); margin-top: 16px; }
-.stTabs [data-baseweb="tab"] { background: transparent; padding: 8px 0; height: auto; color: var(--ink2); font-size: 13px; font-weight: 500; }
+.stTabs [data-baseweb="tab"] { background: transparent; padding: 8px 0; height: auto; color: var(--ink2); font-size: 13px !important; font-weight: 500; }
 .stTabs [aria-selected="true"] { color: var(--ink) !important; font-weight: 600; }
 .stTabs [data-baseweb="tab-highlight"] { background: var(--green) !important; height: 2px; }
 .stTabs [data-baseweb="tab-border"] { display: none; }
 .stTabs [data-baseweb="tab-panel"] { padding-top: 16px; }
 
-/* ---- hero numbers ---- */
-.hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin: 20px 0 16px 0; align-items: baseline; }
-.hero-num { font-family: 'Archivo', sans-serif; font-stretch: 80%; font-weight: 300; font-size: 42px; line-height: 1.0; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
-.hero-num.lead { font-size: 44px; color: var(--green); }
-.hero-unit { font-family: 'Public Sans', sans-serif; font-stretch: 100%; font-size: 16px; font-weight: 400; letter-spacing: 0; color: var(--ink2); margin-left: 6px; }
-.hero-label { margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.2; }
-.hero-note { margin-top: 4px; font-size: 10.5px; line-height: 1.4; color: var(--ink3); max-width: 32ch; }
+/* 3. Non-Negotiable Rule #2: Tightly Grouped Hero KPIs (36–44 px Numbers) */
+.hero { 
+    display: flex !important; 
+    flex-direction: row !important;
+    gap: 40px !important; 
+    max-width: 820px !important; /* Locks KPIs tightly together */
+    margin: 24px 0 20px 0 !important; 
+    align-items: baseline !important; 
+}
 
-/* ---- section titles ---- */
-.sec { font-family: 'Archivo', sans-serif; font-stretch: 90%; font-weight: 600; font-size: 16px; letter-spacing: -0.005em; margin: 24px 0 4px 0; color: var(--ink); }
+.hero > div { flex: 1; }
+
+.hero-num { 
+    font-family: 'Archivo', sans-serif; 
+    font-stretch: 80%; 
+    font-weight: 300; 
+    font-size: 40px !important; 
+    line-height: 1.0 !important; 
+    letter-spacing: -0.02em; 
+    font-variant-numeric: tabular-nums; 
+    color: var(--ink); 
+    white-space: nowrap; 
+}
+
+.hero-num.lead { font-size: 44px !important; color: var(--green); }
+.hero-unit { font-family: 'Public Sans', sans-serif; font-stretch: 100%; font-size: 15px !important; font-weight: 400; color: var(--ink2); margin-left: 6px; }
+.hero-label { margin-top: 8px; font-size: 13px !important; font-weight: 600; color: var(--ink); line-height: 1.2; }
+.hero-note { margin-top: 4px; font-size: 11px !important; line-height: 1.4 !important; color: var(--ink3); max-width: 28ch; }
+
+/* Section Headings (14–16 px) */
+.sec { font-family: 'Archivo', sans-serif; font-stretch: 90%; font-weight: 600; font-size: 16px !important; letter-spacing: -0.005em; margin: 28px 0 4px 0; color: var(--ink); }
 .sec.first { margin-top: 12px; }
-.sec-sub { color: var(--ink2); font-size: 12px; line-height: 1.45; max-width: 72ch; margin-bottom: 12px; }
-.fig-title { font-size: 13px; font-weight: 600; color: var(--ink); margin: 12px 0 2px 0; }
-.fig-sub { font-size: 11px; color: var(--ink3); margin-bottom: 4px; }
+.sec-sub { color: var(--ink2); font-size: 12px !important; line-height: 1.45 !important; max-width: 720px !important; margin-bottom: 12px; }
+.fig-title { font-size: 13px !important; font-weight: 600; color: var(--ink); margin: 12px 0 2px 0; }
+.fig-sub { font-size: 11px !important; color: var(--ink3); margin-bottom: 4px; }
 
-/* ---- prose and notes ---- */
-.prose2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin: 14px 0 0 0; }
-.prose2 p { font-size: 13px; line-height: 1.55; color: var(--ink); margin: 0 0 8px 0; max-width: 62ch; }
+/* 4. Non-Negotiable Rule #3: Controlled Line Widths & Spacing */
+.prose2 { display: flex !important; flex-direction: row !important; gap: 48px !important; max-width: 900px !important; margin: 16px 0 0 0 !important; }
+.prose2 > div { flex: 1; }
+.prose2 p { font-size: 13px !important; line-height: 1.55 !important; color: var(--ink); margin: 0 0 8px 0; max-width: 65ch !important; }
 .prose2 b { font-weight: 600; }
-.note { font-size: 10.5px; line-height: 1.45; color: var(--ink3); margin: 6px 0 0 0; max-width: 120ch; }
-.body { font-size: 13px; line-height: 1.55; color: var(--ink); max-width: 64ch; }
 
-/* ---- ledger: label left, value right, hairline rows ---- */
-.group-title { font-size: 13px; font-weight: 600; margin: 0 0 4px 0; color: var(--ink); }
+.note { font-size: 11px !important; line-height: 1.45 !important; color: var(--ink3); margin: 8px 0 0 0; max-width: 800px !important; }
+.body { font-size: 13px !important; line-height: 1.55 !important; color: var(--ink); max-width: 680px !important; }
+
+/* Ledgers */
+.group-title { font-size: 13px !important; font-weight: 600; margin: 0 0 4px 0; color: var(--ink); }
 .ledger { display: grid; grid-template-columns: 1fr auto; column-gap: 20px; }
-.ledger .k { padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 12.5px; color: var(--ink2); line-height: 1.3; }
-.ledger .k small { display: block; font-size: 10.5px; color: var(--ink3); margin-top: 1px; }
-.ledger .v { padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 13px; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.3; }
-.ledger-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 8px; }
-.ledger-cols.three { grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+.ledger .k { padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 12.5px !important; color: var(--ink2); line-height: 1.3; }
+.ledger .k small { display: block; font-size: 10.5px !important; color: var(--ink3); margin-top: 1px; }
+.ledger .v { padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 13px !important; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.3; }
+.ledger-cols { display: flex !important; flex-direction: row !important; gap: 48px !important; max-width: 1000px !important; margin-top: 12px !important; }
+.ledger-cols > div { flex: 1; }
+.ledger-cols.three > div { flex: 1; }
 
-/* ---- caveats: the only place a rule line is used on a block ---- */
-.caveat { border-left: 3px solid var(--solar); padding: 2px 0 2px 12px; margin: 16px 0; max-width: 120ch; }
+/* Caveats */
+.caveat { border-left: 3px solid var(--solar); padding: 2px 0 2px 12px; margin: 18px 0; max-width: 800px !important; }
 .caveat.brick { border-left-color: var(--brick); }
-.caveat-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
-.caveat-body { font-size: 12px; line-height: 1.5; color: var(--ink2); }
+.caveat-title { font-size: 13px !important; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+.caveat-body { font-size: 12px !important; line-height: 1.5 !important; color: var(--ink2); }
 
-/* ---- big stat (BIM / retrofits) ---- */
-.stat-num { font-family: 'Archivo', sans-serif; font-stretch: 85%; font-weight: 300; font-size: 38px; letter-spacing: -0.02em; line-height: 1.05; color: var(--green); font-variant-numeric: tabular-nums; }
-.stat-sub { font-size: 12.5px; color: var(--ink2); margin-top: 4px; }
-.legend-row { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 12px; color: var(--ink); margin: 4px 0 10px 0; }
+/* Big Stat Numbers */
+.stat-num { font-family: 'Archivo', sans-serif; font-stretch: 85%; font-weight: 300; font-size: 38px !important; letter-spacing: -0.02em; line-height: 1.05; color: var(--green); font-variant-numeric: tabular-nums; }
+.stat-sub { font-size: 12.5px !important; color: var(--ink2); margin-top: 4px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 12px !important; color: var(--ink); margin: 4px 0 10px 0; }
 .sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
 
-/* ---- widgets ---- */
-.stRadio [data-testid="stWidgetLabel"] p { font-size: 13px; font-weight: 600; color: var(--ink) !important; }
+/* Chart Container Heights & Margins */
+.stPlotlyChart { max-width: 100% !important; margin-top: 8px !important; margin-bottom: 20px !important; }
+
+/* Widgets */
+.stRadio [data-testid="stWidgetLabel"] p { font-size: 13px !important; font-weight: 600; color: var(--ink) !important; }
 .stRadio div[role="radiogroup"] { gap: 18px; }
-.stRadio div[role="radiogroup"] label p { font-size: 13px; font-weight: 500; color: var(--ink) !important; }
+.stRadio div[role="radiogroup"] label p { font-size: 13px !important; font-weight: 500; color: var(--ink) !important; }
 [data-testid="stExpander"] { border: none; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); border-radius: 0; background: transparent; }
-[data-testid="stExpander"] summary p { font-weight: 600; font-size: 13px; }
-:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+[data-testid="stExpander"] summary p { font-weight: 600; font-size: 13px !important; }
 
 @media (max-width: 860px) {
-  .hero, .prose2, .ledger-cols, .ledger-cols.three { grid-template-columns: 1fr; gap: 20px; }
+  .hero, .prose2, .ledger-cols { flex-direction: column !important; gap: 20px !important; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -154,7 +210,7 @@ def ledger_html(rows, title=None):
     return out
 
 
-def style_fig(fig, height=300, legend=False, margin=None):
+def style_fig(fig, height=350, legend=False, margin=None):
     fig.update_layout(
         height=height, template="simple_white",
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
@@ -340,7 +396,7 @@ with tab_exec:
         textposition="outside", cliponaxis=False, textfont=dict(size=11, color=INK2),
         hovertemplate="%{x}: %{y:,.0f} kWh<extra></extra>"
     ))
-    style_fig(fig1, height=310, margin=dict(l=0, r=0, t=22, b=0))
+    style_fig(fig1, height=360, margin=dict(l=0, r=0, t=22, b=0))
     fig1.update_layout(bargap=0.38, yaxis_title="kWh")
     show(fig1)
     note("The darkest bar marks the peak month in the selected range.")
@@ -362,7 +418,7 @@ with tab_exec:
             textposition="inside", insidetextanchor="start", textfont=dict(color=INK, size=11.5),
             hovertemplate="Solar offset: %{x:,.0f} kWh<extra></extra>"
         ))
-        style_fig(fig_mix, height=80, margin=dict(l=0, r=0, t=6, b=0))
+        style_fig(fig_mix, height=100, margin=dict(l=0, r=0, t=6, b=0))
         fig_mix.update_layout(barmode="stack", bargap=0.1)
         fig_mix.update_xaxes(visible=False)
         fig_mix.update_yaxes(visible=False)
@@ -381,7 +437,7 @@ with tab_exec:
         fig_n.add_vrect(x0=10, x1=20, fillcolor=BRICK, opacity=0.18, line_width=0)
         fig_n.add_trace(go.Scatter(x=[min(abs(nmbe), 20)], y=[0], mode="markers",
                                    marker=dict(symbol="diamond", size=12, color=INK), hoverinfo="skip"))
-        style_fig(fig_n, height=56, margin=dict(l=0, r=0, t=4, b=0))
+        style_fig(fig_n, height=65, margin=dict(l=0, r=0, t=4, b=0))
         fig_n.update_xaxes(range=[0, 20], tickvals=[0, 10, 20], ticksuffix="%", showline=False)
         fig_n.update_yaxes(visible=False, range=[-1, 1])
         show(fig_n)
@@ -495,7 +551,7 @@ with tab_flow:
             ]
         )
     ))
-    style_fig(fig_sankey, height=380, margin=dict(l=0, r=0, t=10, b=10))
+    style_fig(fig_sankey, height=400, margin=dict(l=0, r=0, t=10, b=10))
     show(fig_sankey)
 
 # ----------------- TAB 4: FLOORS AND CARBON -----------------
@@ -513,7 +569,7 @@ with tab_floor:
             textposition='outside', cliponaxis=False, textfont=dict(color=INK, size=11),
             hovertemplate="%{y}: %{x:,.0f} kWh/week<extra></extra>"
         ))
-        style_fig(fig_floor, height=200, margin=dict(l=0, r=80, t=6, b=0))
+        style_fig(fig_floor, height=220, margin=dict(l=0, r=80, t=6, b=0))
         fig_floor.update_layout(xaxis_title="Estimated kWh per week", yaxis=dict(autorange="reversed"), bargap=0.4)
         fig_floor.update_xaxes(showgrid=True, gridcolor=GRID)
         fig_floor.update_yaxes(showgrid=False)
@@ -544,7 +600,7 @@ with tab_floor:
         textposition='outside', cliponaxis=False, textfont=dict(color=INK, size=11),
         hovertemplate="%{y}: %{x:.1f} tCO2/yr<extra></extra>"
     ))
-    style_fig(fig_co2_bar, height=190, margin=dict(l=0, r=130, t=6, b=0))
+    style_fig(fig_co2_bar, height=210, margin=dict(l=0, r=130, t=6, b=0))
     fig_co2_bar.update_layout(xaxis_title="tCO2/yr", yaxis=dict(autorange="reversed"), bargap=0.4)
     fig_co2_bar.update_xaxes(showgrid=True, gridcolor=GRID)
     fig_co2_bar.update_yaxes(showgrid=False)
@@ -564,7 +620,7 @@ with tab_proj:
         fill='tozeroy', fillcolor='rgba(31,78,69,0.08)',
         hovertemplate="%{x}°C: %{y:,.1f} kWh/h<extra></extra>"
     ))
-    style_fig(fig3, height=270, margin=dict(l=0, r=0, t=10, b=0))
+    style_fig(fig3, height=300, margin=dict(l=0, r=0, t=10, b=0))
     fig3.update_layout(xaxis_title="Temperature (°C)", yaxis_title="Mean hourly kWh")
     show(fig3)
     note("Not measured Block 3 behavior. This reflects the trained model's general temperature response.")
@@ -582,7 +638,7 @@ with tab_proj:
         textfont=dict(color=INK2, size=11),
         hovertemplate="%{x}: %{y:,.1f} tCO2<extra></extra>"
     ))
-    style_fig(fig4, height=270, margin=dict(l=0, r=0, t=22, b=0))
+    style_fig(fig4, height=300, margin=dict(l=0, r=0, t=22, b=0))
     fig4.update_layout(yaxis_title="tCO2 / year", bargap=0.45)
     show(fig4)
     note(f"Scenario-based projected Block 3 electricity CO2, {years[0]} to {years[-1]}, under assumed usage growth ({usage_growth}%/yr) and climate trend ({climate_trend}%/yr). Not a measured or guaranteed forecast. Excludes diesel (campus-level, held constant, not projected here). Audit baseline year: Apr 2021–Mar 2022. Weather data reference period differs from the audit year.")
@@ -603,7 +659,7 @@ with tab_calib:
         x=hours_axis, y=calibrated_week, mode='lines', name='Calibrated XGBoost (calibrated ML estimate)',
         line=dict(color=GREEN, width=2.5)
     ))
-    style_fig(fig_1wk, height=300, legend=True, margin=dict(l=0, r=0, t=28, b=0))
+    style_fig(fig_1wk, height=320, legend=True, margin=dict(l=0, r=0, t=28, b=0))
     fig_1wk.update_layout(xaxis_title="Hour of week (0-167)", yaxis_title="kWh")
     show(fig_1wk)
 
@@ -684,7 +740,7 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
                                          y=[xgb_m['r2'], xgb_m['mae_kwh'], xgb_m['rmse_kwh']], marker_color=GREEN))
             fig_metrics.add_trace(go.Bar(name='Linear Regression (baseline)', x=metric_names,
                                          y=[base_m['r2'], base_m['mae_kwh'], base_m['rmse_kwh']], marker_color=GREEN3))
-            style_fig(fig_metrics, height=240, legend=True, margin=dict(l=0, r=0, t=28, b=0))
+            style_fig(fig_metrics, height=260, legend=True, margin=dict(l=0, r=0, t=28, b=0))
             fig_metrics.update_layout(barmode='group', bargap=0.35)
             show(fig_metrics)
 
@@ -695,7 +751,7 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
                 x=list(importances.values()), y=list(importances.keys()), orientation='h',
                 marker_color=GREEN2, marker_line_width=0
             ))
-            style_fig(fig_imp, height=240, margin=dict(l=0, r=10, t=10, b=0))
+            style_fig(fig_imp, height=260, margin=dict(l=0, r=10, t=10, b=0))
             fig_imp.update_layout(yaxis=dict(autorange="reversed"), bargap=0.35)
             fig_imp.update_xaxes(showgrid=True, gridcolor=GRID)
             fig_imp.update_yaxes(showgrid=False)
@@ -733,115 +789,3 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
 - **Lab/classroom equipment power-down enforcement:** Enforcing an equipment shutdown checklist after scheduled lab/class hours prevents after-hours idle draw.
 - **Fan/lighting operating-hour review in low-occupancy spaces:** Regular checks that spaces like Electrical Labs and Drawing Halls (scheduled ~8 hrs/week) are powered off when idle.
 """)
-import streamlit as st
-
-st.markdown("""
-<style>
-/* ==========================================================================
-   PRECISION COMPOSITION & TYPOGRAPHY CORRECTION (STRICT COMPLIANCE)
-   ========================================================================== */
-
-/* 1. Page Frame: Occupies 80-85% of Viewport Naturally, Centered */
-.main .block-container {
-    max-width: 1280px !important;
-    width: 85% !important;
-    margin: 0 auto !important;
-    padding-top: 2rem !important;
-    padding-bottom: 3rem !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
-}
-
-/* 2. Rule #1 Enforcement: Exact Minimum Readable Typography */
-/* Base Text & Paragraphs */
-html, body, [class*="css"], .stMarkdown, p, div, span, label {
-    font-size: 13px !important;
-    line-height: 1.6 !important;
-    letter-spacing: 0.01em !important;
-}
-
-/* Main Page Title (20-24px) */
-h1, .main-title, div[data-testid="stHeader"] h1, [data-testid="stMarkdownContainer"] h1 {
-    font-size: 24px !important;
-    font-weight: 700 !important;
-    line-height: 1.3 !important;
-    margin-bottom: 16px !important;
-}
-
-/* Section Headings (14-16px) */
-h2, h3, .section-header, [data-testid="stMarkdownContainer"] h2, [data-testid="stMarkdownContainer"] h3 {
-    font-size: 16px !important;
-    font-weight: 600 !important;
-    line-height: 1.4 !important;
-    margin-top: 24px !important;
-    margin-bottom: 12px !important;
-}
-
-/* KPI Metrics (36-44px) */
-div[data-testid="stMetricValue"] * {
-    font-size: 40px !important;
-    font-weight: 700 !important;
-    line-height: 1.1 !important;
-}
-
-/* KPI Labels (12-13px) */
-div[data-testid="stMetricLabel"] * {
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    line-height: 1.3 !important;
-    margin-bottom: 4px !important;
-}
-
-/* Sidebar Labels/Text (11-12px) */
-section[data-testid="stSidebar"] *, section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span {
-    font-size: 12px !important;
-    line-height: 1.5 !important;
-}
-
-/* Chart Annotations, Secondary Notes & Captions (10-12px) */
-.small-note, .caption, [data-testid="stCaptionContainer"] *, small {
-    font-size: 11px !important;
-    line-height: 1.4 !important;
-}
-
-/* 3. Rule #2 Enforcement: Compact KPI Grouping (No Stretching) */
-div[data-testid="stHorizontalBlock"]:has(div[data-testid="stMetric"]) {
-    max-width: 760px !important; /* Locks 169.9 MWh/yr, 72.7 tCO₂/yr, 39.7% close together */
-    gap: 28px !important;
-    margin-top: 12px !important;
-    margin-bottom: 28px !important;
-}
-
-div[data-testid="stMetric"] {
-    background: transparent !important;
-    padding: 0 !important;
-}
-
-/* 4. Rule #3 Enforcement: Controlled Explanation / Body Width */
-.stMarkdown p, .explanation-text {
-    max-width: 680px !important; /* Ideal reading measure (500-750px) */
-    text-align: left !important;
-    margin-bottom: 12px !important;
-}
-
-/* 5. Monthly Electricity Chart Proportions */
-.stPlotlyChart, .stVegaLiteChart, [data-testid="stElementContainer"]:has(.stPlotlyChart) {
-    max-width: 920px !important; /* Keeps chart proportioned, avoiding ultra-wide stretch */
-    min-height: 420px !important; /* Fills vertical empty space naturally */
-    margin-top: 12px !important;
-    margin-bottom: 28px !important;
-}
-
-/* 6. Supporting Figures Alignment (2 Clean Columns) */
-div[data-testid="stHorizontalBlock"]:has(.supporting-figure-col) {
-    max-width: 1000px !important;
-    gap: 48px !important;
-    margin-top: 16px !important;
-}
-
-/* Vertical Spacing & Rhythm */
-[data-testid="stVerticalBlock"] > div {
-    margin-bottom: 14px !important;
-}
-</style>
-""", unsafe_allow_html=True)
