@@ -733,3 +733,82 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
 - **Lab/classroom equipment power-down enforcement:** Enforcing an equipment shutdown checklist after scheduled lab/class hours prevents after-hours idle draw.
 - **Fan/lighting operating-hour review in low-occupancy spaces:** Regular checks that spaces like Electrical Labs and Drawing Halls (scheduled ~8 hrs/week) are powered off when idle.
 """)
+# Streamlit Dashboard file (app.py) ki bilkul last lo add cheyandi:
+
+st.markdown("""
+<style>
+/* ==========================================================================
+   VIEWPORT FIT ADJUSTMENTS (FINAL PASS)
+   ========================================================================== */
+
+/* 1. Streamlit Main Container Fix */
+.block-container {
+  max-width: 95% !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}
+
+/* 2. Expand Main Dashboard Container */
+.dashboard-container,
+.main-wrapper,
+#app-root {
+  width: 100% !important;
+  max-width: 1760px !important;
+  min-height: calc(100vh - 40px);
+  margin: 0 auto !important;
+  padding: 24px 32px !important;
+  box-sizing: border-box !important;
+}
+
+/* 3. Optimize Main Layout Grid / Sections Spacing */
+.dashboard-grid,
+.main-content-layout,
+div[data-testid="stHorizontalBlock"] {
+  display: flex !important;
+  gap: 24px !important;
+  width: 100% !important;
+}
+
+/* 4. Dynamic Chart Scaling */
+.chart-container,
+.chart-card,
+.stPlotlyChart {
+  width: 100% !important;
+  min-height: 380px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.chart-container canvas,
+.chart-container svg,
+.chart-wrapper {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 5. Column Proportions & Flex Cards */
+.card,
+.kpi-card,
+.widget-panel,
+div[data-testid="stMetric"] {
+  height: 100% !important;
+  padding: 20px 24px !important;
+  box-sizing: border-box !important;
+}
+
+/* 6. Section & Row Spacing Alignment */
+.dashboard-section,
+.row {
+  margin-bottom: 24px !important;
+  width: 100% !important;
+}
+
+.dashboard-section:last-child,
+.row:last-child {
+  margin-bottom: 0 !important;
+}
+</style>
+""", unsafe_allow_html=True)
