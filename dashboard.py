@@ -38,7 +38,15 @@ st.markdown("""
 .stApp { background: var(--paper); color: var(--ink); font-family: 'Public Sans', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.5; }
 header[data-testid="stHeader"] { background: transparent; }
 #MainMenu, footer { visibility: hidden; }
-.block-container, [data-testid="stMainBlockContainer"] { max-width: 1200px !important; margin: 0 auto; padding: 1.5rem 2rem 3rem 2rem; }
+.block-container, [data-testid="stMainBlockContainer"] {
+    max-width: 1200px !important;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 3rem 2rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
 .stApp p, .stApp li, .stApp label, .stApp span { color: var(--ink); font-size: 13px; }
 
 /* ---- sidebar ---- */
@@ -61,7 +69,7 @@ header[data-testid="stHeader"] { background: transparent; }
 .stTabs [data-baseweb="tab-panel"] { padding-top: 16px; }
 
 /* ---- hero numbers ---- */
-.hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin: 20px 0 16px 0; align-items: baseline; }
+.hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin: 36px 0 28px 0; align-items: baseline; }
 .hero-num { font-family: 'Archivo', sans-serif; font-stretch: 80%; font-weight: 300; font-size: 42px; line-height: 1.0; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
 .hero-num.lead { font-size: 44px; color: var(--green); }
 .hero-unit { font-family: 'Public Sans', sans-serif; font-stretch: 100%; font-size: 16px; font-weight: 400; letter-spacing: 0; color: var(--ink2); margin-left: 6px; }
@@ -85,9 +93,9 @@ header[data-testid="stHeader"] { background: transparent; }
 /* ---- ledger: label left, value right, hairline rows ---- */
 .group-title { font-size: 13px; font-weight: 600; margin: 0 0 4px 0; color: var(--ink); }
 .ledger { display: grid; grid-template-columns: 1fr auto; column-gap: 20px; }
-.ledger .k { padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 12.5px; color: var(--ink2); line-height: 1.3; }
+.ledger .k { padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: 12.5px; color: var(--ink2); line-height: 1.3; }
 .ledger .k small { display: block; font-size: 10.5px; color: var(--ink3); margin-top: 1px; }
-.ledger .v { padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 13px; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.3; }
+.ledger .v { padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: 13px; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.3; }
 .ledger-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 8px; }
 .ledger-cols.three { grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
 
@@ -340,7 +348,7 @@ with tab_exec:
         textposition="outside", cliponaxis=False, textfont=dict(size=11, color=INK2),
         hovertemplate="%{x}: %{y:,.0f} kWh<extra></extra>"
     ))
-    style_fig(fig1, height=310, margin=dict(l=0, r=0, t=22, b=0))
+    style_fig(fig1, height=380, margin=dict(l=0, r=0, t=22, b=0))
     fig1.update_layout(bargap=0.38, yaxis_title="kWh")
     show(fig1)
     note("The darkest bar marks the peak month in the selected range.")
@@ -362,7 +370,7 @@ with tab_exec:
             textposition="inside", insidetextanchor="start", textfont=dict(color=INK, size=11.5),
             hovertemplate="Solar offset: %{x:,.0f} kWh<extra></extra>"
         ))
-        style_fig(fig_mix, height=80, margin=dict(l=0, r=0, t=6, b=0))
+        style_fig(fig_mix, height=110, margin=dict(l=0, r=0, t=6, b=0))
         fig_mix.update_layout(barmode="stack", bargap=0.1)
         fig_mix.update_xaxes(visible=False)
         fig_mix.update_yaxes(visible=False)
@@ -381,7 +389,7 @@ with tab_exec:
         fig_n.add_vrect(x0=10, x1=20, fillcolor=BRICK, opacity=0.18, line_width=0)
         fig_n.add_trace(go.Scatter(x=[min(abs(nmbe), 20)], y=[0], mode="markers",
                                    marker=dict(symbol="diamond", size=12, color=INK), hoverinfo="skip"))
-        style_fig(fig_n, height=56, margin=dict(l=0, r=0, t=4, b=0))
+        style_fig(fig_n, height=80, margin=dict(l=0, r=0, t=4, b=0))
         fig_n.update_xaxes(range=[0, 20], tickvals=[0, 10, 20], ticksuffix="%", showline=False)
         fig_n.update_yaxes(visible=False, range=[-1, 1])
         show(fig_n)
@@ -495,7 +503,7 @@ with tab_flow:
             ]
         )
     ))
-    style_fig(fig_sankey, height=380, margin=dict(l=0, r=0, t=10, b=10))
+    style_fig(fig_sankey, height=440, margin=dict(l=0, r=0, t=10, b=10))
     show(fig_sankey)
 
 # ----------------- TAB 4: FLOORS AND CARBON -----------------
@@ -513,7 +521,7 @@ with tab_floor:
             textposition='outside', cliponaxis=False, textfont=dict(color=INK, size=11),
             hovertemplate="%{y}: %{x:,.0f} kWh/week<extra></extra>"
         ))
-        style_fig(fig_floor, height=200, margin=dict(l=0, r=80, t=6, b=0))
+        style_fig(fig_floor, height=240, margin=dict(l=0, r=80, t=6, b=0))
         fig_floor.update_layout(xaxis_title="Estimated kWh per week", yaxis=dict(autorange="reversed"), bargap=0.4)
         fig_floor.update_xaxes(showgrid=True, gridcolor=GRID)
         fig_floor.update_yaxes(showgrid=False)
@@ -544,7 +552,7 @@ with tab_floor:
         textposition='outside', cliponaxis=False, textfont=dict(color=INK, size=11),
         hovertemplate="%{y}: %{x:.1f} tCO2/yr<extra></extra>"
     ))
-    style_fig(fig_co2_bar, height=190, margin=dict(l=0, r=130, t=6, b=0))
+    style_fig(fig_co2_bar, height=230, margin=dict(l=0, r=130, t=6, b=0))
     fig_co2_bar.update_layout(xaxis_title="tCO2/yr", yaxis=dict(autorange="reversed"), bargap=0.4)
     fig_co2_bar.update_xaxes(showgrid=True, gridcolor=GRID)
     fig_co2_bar.update_yaxes(showgrid=False)
@@ -564,7 +572,7 @@ with tab_proj:
         fill='tozeroy', fillcolor='rgba(31,78,69,0.08)',
         hovertemplate="%{x}°C: %{y:,.1f} kWh/h<extra></extra>"
     ))
-    style_fig(fig3, height=270, margin=dict(l=0, r=0, t=10, b=0))
+    style_fig(fig3, height=330, margin=dict(l=0, r=0, t=10, b=0))
     fig3.update_layout(xaxis_title="Temperature (°C)", yaxis_title="Mean hourly kWh")
     show(fig3)
     note("Not measured Block 3 behavior. This reflects the trained model's general temperature response.")
@@ -582,7 +590,7 @@ with tab_proj:
         textfont=dict(color=INK2, size=11),
         hovertemplate="%{x}: %{y:,.1f} tCO2<extra></extra>"
     ))
-    style_fig(fig4, height=270, margin=dict(l=0, r=0, t=22, b=0))
+    style_fig(fig4, height=330, margin=dict(l=0, r=0, t=22, b=0))
     fig4.update_layout(yaxis_title="tCO2 / year", bargap=0.45)
     show(fig4)
     note(f"Scenario-based projected Block 3 electricity CO2, {years[0]} to {years[-1]}, under assumed usage growth ({usage_growth}%/yr) and climate trend ({climate_trend}%/yr). Not a measured or guaranteed forecast. Excludes diesel (campus-level, held constant, not projected here). Audit baseline year: Apr 2021–Mar 2022. Weather data reference period differs from the audit year.")
@@ -603,7 +611,7 @@ with tab_calib:
         x=hours_axis, y=calibrated_week, mode='lines', name='Calibrated XGBoost (calibrated ML estimate)',
         line=dict(color=GREEN, width=2.5)
     ))
-    style_fig(fig_1wk, height=300, legend=True, margin=dict(l=0, r=0, t=28, b=0))
+    style_fig(fig_1wk, height=360, legend=True, margin=dict(l=0, r=0, t=28, b=0))
     fig_1wk.update_layout(xaxis_title="Hour of week (0-167)", yaxis_title="kWh")
     show(fig_1wk)
 
@@ -684,7 +692,7 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
                                          y=[xgb_m['r2'], xgb_m['mae_kwh'], xgb_m['rmse_kwh']], marker_color=GREEN))
             fig_metrics.add_trace(go.Bar(name='Linear Regression (baseline)', x=metric_names,
                                          y=[base_m['r2'], base_m['mae_kwh'], base_m['rmse_kwh']], marker_color=GREEN3))
-            style_fig(fig_metrics, height=240, legend=True, margin=dict(l=0, r=0, t=28, b=0))
+            style_fig(fig_metrics, height=280, legend=True, margin=dict(l=0, r=0, t=28, b=0))
             fig_metrics.update_layout(barmode='group', bargap=0.35)
             show(fig_metrics)
 
@@ -695,7 +703,7 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
                 x=list(importances.values()), y=list(importances.keys()), orientation='h',
                 marker_color=GREEN2, marker_line_width=0
             ))
-            style_fig(fig_imp, height=240, margin=dict(l=0, r=10, t=10, b=0))
+            style_fig(fig_imp, height=280, margin=dict(l=0, r=10, t=10, b=0))
             fig_imp.update_layout(yaxis=dict(autorange="reversed"), bargap=0.35)
             fig_imp.update_xaxes(showgrid=True, gridcolor=GRID)
             fig_imp.update_yaxes(showgrid=False)
@@ -733,9 +741,3 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
 - **Lab/classroom equipment power-down enforcement:** Enforcing an equipment shutdown checklist after scheduled lab/class hours prevents after-hours idle draw.
 - **Fan/lighting operating-hour review in low-occupancy spaces:** Regular checks that spaces like Electrical Labs and Drawing Halls (scheduled ~8 hrs/week) are powered off when idle.
 """)
-.block-container, [data-testid="stMainBlockContainer"] {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
