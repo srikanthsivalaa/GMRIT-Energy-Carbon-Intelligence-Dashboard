@@ -35,84 +35,84 @@ st.markdown("""
   --paper:#ECEBE6; --ink:#1B2421; --ink2:#4A5753; --ink3:#5A6561; --rule:#C9C8C0;
   --green:#1F4E45; --solar:#C98A1B; --brick:#A5442F; --steel:#5B6B73;
 }
-.stApp { background: var(--paper); color: var(--ink); font-family: 'Public Sans', 'Helvetica Neue', Arial, sans-serif; }
+.stApp { background: var(--paper); color: var(--ink); font-family: 'Public Sans', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.5; }
 header[data-testid="stHeader"] { background: transparent; }
 #MainMenu, footer { visibility: hidden; }
-.block-container, [data-testid="stMainBlockContainer"] { max-width: none !important; width: 100%; padding: 2.4rem 2.75rem 5rem 2.75rem; }
-.stApp p, .stApp li, .stApp label, .stApp span { color: var(--ink); }
+.block-container, [data-testid="stMainBlockContainer"] { max-width: 1200px !important; margin: 0 auto; padding: 1.5rem 2rem 3rem 2rem; }
+.stApp p, .stApp li, .stApp label, .stApp span { color: var(--ink); font-size: 13px; }
 
 /* ---- sidebar ---- */
 [data-testid="stSidebar"] { background: #E1DFD8; border-right: 1px solid var(--rule); }
 [data-testid="stSidebar"][aria-expanded="true"] { width: 268px !important; min-width: 268px !important; max-width: 268px !important; }
-[data-testid="stSidebar"] h2 { font-family: 'Archivo', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0; }
-[data-testid="stSidebar"] hr { border-color: var(--rule); }
-[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color: var(--ink3); }
+[data-testid="stSidebar"] h2 { font-family: 'Archivo', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: 0; }
+[data-testid="stSidebar"] hr { border-color: var(--rule); margin: 12px 0; }
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color: var(--ink3); font-size: 10px; }
 
 /* ---- masthead ---- */
-.masthead-title { font-family: 'Archivo', sans-serif; font-stretch: 85%; font-weight: 600; font-size: clamp(26px, 3.4vw, 40px); letter-spacing: -0.01em; line-height: 1.1; color: var(--ink); }
-.masthead-sub { margin-top: 8px; color: var(--ink2); font-size: 15px; max-width: 72ch; line-height: 1.5; }
+.masthead-title { font-family: 'Archivo', sans-serif; font-stretch: 85%; font-weight: 600; font-size: 24px; letter-spacing: -0.01em; line-height: 1.15; color: var(--ink); }
+.masthead-sub { margin-top: 4px; color: var(--ink2); font-size: 13px; max-width: 72ch; line-height: 1.45; }
 
 /* ---- tabs: text only, one underline ---- */
-.stTabs [data-baseweb="tab-list"] { gap: 30px; border-bottom: 1px solid var(--rule); margin-top: 28px; }
-.stTabs [data-baseweb="tab"] { background: transparent; padding: 10px 0; height: auto; color: var(--ink2); font-size: 14px; font-weight: 500; }
+.stTabs [data-baseweb="tab-list"] { gap: 24px; border-bottom: 1px solid var(--rule); margin-top: 16px; }
+.stTabs [data-baseweb="tab"] { background: transparent; padding: 8px 0; height: auto; color: var(--ink2); font-size: 13px; font-weight: 500; }
 .stTabs [aria-selected="true"] { color: var(--ink) !important; font-weight: 600; }
 .stTabs [data-baseweb="tab-highlight"] { background: var(--green) !important; height: 2px; }
 .stTabs [data-baseweb="tab-border"] { display: none; }
-.stTabs [data-baseweb="tab-panel"] { padding-top: 12px; }
+.stTabs [data-baseweb="tab-panel"] { padding-top: 16px; }
 
 /* ---- hero numbers ---- */
-.hero { display: grid; grid-template-columns: 1.55fr 1fr 1fr; gap: 56px; margin: 34px 0 6px 0; align-items: end; }
-.hero-num { font-family: 'Archivo', sans-serif; font-stretch: 80%; font-weight: 300; font-size: clamp(44px, 5.6vw, 76px); line-height: 0.95; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
-.hero-num.lead { font-size: clamp(60px, 9vw, 124px); color: var(--green); }
-.hero-unit { font-family: 'Public Sans', sans-serif; font-stretch: 100%; font-size: clamp(15px, 1.7vw, 22px); font-weight: 400; letter-spacing: 0; color: var(--ink2); margin-left: 8px; }
-.hero-label { margin-top: 14px; font-size: 15px; font-weight: 600; color: var(--ink); }
-.hero-note { margin-top: 3px; font-size: 13px; line-height: 1.45; color: var(--ink3); max-width: 34ch; }
+.hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin: 20px 0 16px 0; align-items: baseline; }
+.hero-num { font-family: 'Archivo', sans-serif; font-stretch: 80%; font-weight: 300; font-size: 42px; line-height: 1.0; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.hero-num.lead { font-size: 44px; color: var(--green); }
+.hero-unit { font-family: 'Public Sans', sans-serif; font-stretch: 100%; font-size: 16px; font-weight: 400; letter-spacing: 0; color: var(--ink2); margin-left: 6px; }
+.hero-label { margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.2; }
+.hero-note { margin-top: 4px; font-size: 10.5px; line-height: 1.4; color: var(--ink3); max-width: 32ch; }
 
 /* ---- section titles ---- */
-.sec { font-family: 'Archivo', sans-serif; font-stretch: 90%; font-weight: 600; font-size: 22px; letter-spacing: -0.005em; margin: 52px 0 4px 0; color: var(--ink); }
-.sec.first { margin-top: 24px; }
-.sec-sub { color: var(--ink2); font-size: 14px; line-height: 1.55; max-width: 72ch; margin-bottom: 14px; }
-.fig-title { font-size: 14px; font-weight: 600; color: var(--ink); margin: 18px 0 2px 0; }
-.fig-sub { font-size: 13px; color: var(--ink3); margin-bottom: 4px; }
+.sec { font-family: 'Archivo', sans-serif; font-stretch: 90%; font-weight: 600; font-size: 16px; letter-spacing: -0.005em; margin: 24px 0 4px 0; color: var(--ink); }
+.sec.first { margin-top: 12px; }
+.sec-sub { color: var(--ink2); font-size: 12px; line-height: 1.45; max-width: 72ch; margin-bottom: 12px; }
+.fig-title { font-size: 13px; font-weight: 600; color: var(--ink); margin: 12px 0 2px 0; }
+.fig-sub { font-size: 11px; color: var(--ink3); margin-bottom: 4px; }
 
 /* ---- prose and notes ---- */
-.prose2 { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; margin: 22px 0 0 0; }
-.prose2 p { font-size: 15px; line-height: 1.65; color: var(--ink); margin: 0 0 10px 0; max-width: 62ch; }
+.prose2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin: 14px 0 0 0; }
+.prose2 p { font-size: 13px; line-height: 1.55; color: var(--ink); margin: 0 0 8px 0; max-width: 62ch; }
 .prose2 b { font-weight: 600; }
-.note { font-size: 12.5px; line-height: 1.55; color: var(--ink3); margin: 8px 0 0 0; max-width: 120ch; }
-.body { font-size: 14.5px; line-height: 1.65; color: var(--ink); max-width: 64ch; }
+.note { font-size: 10.5px; line-height: 1.45; color: var(--ink3); margin: 6px 0 0 0; max-width: 120ch; }
+.body { font-size: 13px; line-height: 1.55; color: var(--ink); max-width: 64ch; }
 
 /* ---- ledger: label left, value right, hairline rows ---- */
-.group-title { font-size: 14px; font-weight: 600; margin: 0 0 4px 0; color: var(--ink); }
-.ledger { display: grid; grid-template-columns: 1fr auto; column-gap: 24px; }
-.ledger .k { padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: 14px; color: var(--ink2); line-height: 1.35; }
-.ledger .k small { display: block; font-size: 12px; color: var(--ink3); margin-top: 1px; }
-.ledger .v { padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: 15px; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ledger-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; margin-top: 10px; }
-.ledger-cols.three { grid-template-columns: 1fr 1fr 1fr; gap: 44px; }
+.group-title { font-size: 13px; font-weight: 600; margin: 0 0 4px 0; color: var(--ink); }
+.ledger { display: grid; grid-template-columns: 1fr auto; column-gap: 20px; }
+.ledger .k { padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 12.5px; color: var(--ink2); line-height: 1.3; }
+.ledger .k small { display: block; font-size: 10.5px; color: var(--ink3); margin-top: 1px; }
+.ledger .v { padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 13px; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.3; }
+.ledger-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 8px; }
+.ledger-cols.three { grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
 
 /* ---- caveats: the only place a rule line is used on a block ---- */
-.caveat { border-left: 3px solid var(--solar); padding: 2px 0 2px 16px; margin: 22px 0; max-width: 120ch; }
+.caveat { border-left: 3px solid var(--solar); padding: 2px 0 2px 12px; margin: 16px 0; max-width: 120ch; }
 .caveat.brick { border-left-color: var(--brick); }
-.caveat-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
-.caveat-body { font-size: 13.5px; line-height: 1.6; color: var(--ink2); }
+.caveat-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+.caveat-body { font-size: 12px; line-height: 1.5; color: var(--ink2); }
 
 /* ---- big stat (BIM / retrofits) ---- */
-.stat-num { font-family: 'Archivo', sans-serif; font-stretch: 85%; font-weight: 300; font-size: clamp(30px, 3.6vw, 48px); letter-spacing: -0.02em; line-height: 1.05; color: var(--green); font-variant-numeric: tabular-nums; }
-.stat-sub { font-size: 14px; color: var(--ink2); margin-top: 6px; }
-.legend-row { display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 13.5px; color: var(--ink); margin: 6px 0 14px 0; }
-.sw { display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; }
+.stat-num { font-family: 'Archivo', sans-serif; font-stretch: 85%; font-weight: 300; font-size: 38px; letter-spacing: -0.02em; line-height: 1.05; color: var(--green); font-variant-numeric: tabular-nums; }
+.stat-sub { font-size: 12.5px; color: var(--ink2); margin-top: 4px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 12px; color: var(--ink); margin: 4px 0 10px 0; }
+.sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
 
 /* ---- widgets ---- */
-.stRadio [data-testid="stWidgetLabel"] p { font-size: 14px; font-weight: 600; color: var(--ink) !important; }
-.stRadio div[role="radiogroup"] { gap: 22px; }
-.stRadio div[role="radiogroup"] label p { font-size: 14.5px; font-weight: 500; color: var(--ink) !important; }
+.stRadio [data-testid="stWidgetLabel"] p { font-size: 13px; font-weight: 600; color: var(--ink) !important; }
+.stRadio div[role="radiogroup"] { gap: 18px; }
+.stRadio div[role="radiogroup"] label p { font-size: 13px; font-weight: 500; color: var(--ink) !important; }
 [data-testid="stExpander"] { border: none; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); border-radius: 0; background: transparent; }
-[data-testid="stExpander"] summary p { font-weight: 600; }
+[data-testid="stExpander"] summary p { font-weight: 600; font-size: 13px; }
 :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 
 @media (max-width: 860px) {
-  .hero, .prose2, .ledger-cols, .ledger-cols.three { grid-template-columns: 1fr; gap: 28px; }
+  .hero, .prose2, .ledger-cols, .ledger-cols.three { grid-template-columns: 1fr; gap: 20px; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -154,18 +154,18 @@ def ledger_html(rows, title=None):
     return out
 
 
-def style_fig(fig, height=340, legend=False, margin=None):
+def style_fig(fig, height=300, legend=False, margin=None):
     fig.update_layout(
         height=height, template="simple_white",
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family=FONT, color=INK, size=13),
+        font=dict(family=FONT, color=INK, size=11.5),
         margin=margin or dict(l=0, r=0, t=10, b=0),
         showlegend=legend,
-        legend=dict(orientation="h", y=1.12, x=0, font=dict(color=INK)),
+        legend=dict(orientation="h", y=1.12, x=0, font=dict(color=INK, size=11)),
         hoverlabel=dict(bgcolor=INK, font_color="#FFFFFF", font_family=FONT),
     )
-    fig.update_xaxes(showgrid=False, linecolor=RULE, tickcolor=RULE, ticks="outside", tickfont=dict(color=INK2))
-    fig.update_yaxes(gridcolor=GRID, zeroline=False, showline=False, tickfont=dict(color=INK2))
+    fig.update_xaxes(showgrid=False, linecolor=RULE, tickcolor=RULE, ticks="outside", tickfont=dict(color=INK2, size=11))
+    fig.update_yaxes(gridcolor=GRID, zeroline=False, showline=False, tickfont=dict(color=INK2, size=11))
     return fig
 
 
@@ -337,10 +337,10 @@ with tab_exec:
         x=monthly_filtered['month'], y=monthly_filtered['predicted_electricity_kwh'],
         marker_color=bar_colors, marker_line_width=0,
         text=[f"{v:,.0f}" for v in monthly_filtered['predicted_electricity_kwh']],
-        textposition="outside", cliponaxis=False, textfont=dict(size=12, color=INK2),
+        textposition="outside", cliponaxis=False, textfont=dict(size=11, color=INK2),
         hovertemplate="%{x}: %{y:,.0f} kWh<extra></extra>"
     ))
-    style_fig(fig1, height=400, margin=dict(l=0, r=0, t=26, b=0))
+    style_fig(fig1, height=310, margin=dict(l=0, r=0, t=22, b=0))
     fig1.update_layout(bargap=0.38, yaxis_title="kWh")
     show(fig1)
     note("The darkest bar marks the peak month in the selected range.")
@@ -353,16 +353,16 @@ with tab_exec:
         fig_mix.add_trace(go.Bar(
             y=[""], x=[net_grid_kwh], orientation="h", name="Net grid electricity",
             marker_color=STEEL, text=[f"Grid  {net_grid_kwh:,.0f} kWh"], textposition="inside",
-            insidetextanchor="start", textfont=dict(color="#FFFFFF", size=13),
+            insidetextanchor="start", textfont=dict(color="#FFFFFF", size=11.5),
             hovertemplate="Net grid: %{x:,.0f} kWh<extra></extra>"
         ))
         fig_mix.add_trace(go.Bar(
             y=[""], x=[block3_solar_offset_kwh], orientation="h", name="Solar offset (estimated allocation)",
             marker_color=SOLAR, text=[f"Solar  {block3_solar_offset_kwh:,.0f} kWh" if block3_solar_offset_kwh > 0 else ""],
-            textposition="inside", insidetextanchor="start", textfont=dict(color=INK, size=13),
+            textposition="inside", insidetextanchor="start", textfont=dict(color=INK, size=11.5),
             hovertemplate="Solar offset: %{x:,.0f} kWh<extra></extra>"
         ))
-        style_fig(fig_mix, height=96, margin=dict(l=0, r=0, t=6, b=0))
+        style_fig(fig_mix, height=80, margin=dict(l=0, r=0, t=6, b=0))
         fig_mix.update_layout(barmode="stack", bargap=0.1)
         fig_mix.update_xaxes(visible=False)
         fig_mix.update_yaxes(visible=False)
@@ -380,8 +380,8 @@ with tab_exec:
         fig_n.add_vrect(x0=0, x1=10, fillcolor=GREEN3, opacity=0.35, line_width=0)
         fig_n.add_vrect(x0=10, x1=20, fillcolor=BRICK, opacity=0.18, line_width=0)
         fig_n.add_trace(go.Scatter(x=[min(abs(nmbe), 20)], y=[0], mode="markers",
-                                   marker=dict(symbol="diamond", size=14, color=INK), hoverinfo="skip"))
-        style_fig(fig_n, height=64, margin=dict(l=0, r=0, t=4, b=0))
+                                   marker=dict(symbol="diamond", size=12, color=INK), hoverinfo="skip"))
+        style_fig(fig_n, height=56, margin=dict(l=0, r=0, t=4, b=0))
         fig_n.update_xaxes(range=[0, 20], tickvals=[0, 10, 20], ticksuffix="%", showline=False)
         fig_n.update_yaxes(visible=False, range=[-1, 1])
         show(fig_n)
@@ -450,10 +450,10 @@ with tab_bim:
 
     with col_meta:
         st.markdown(f"""
-<div style='margin-top:18px;'>
+<div style='margin-top:12px;'>
 <div class='stat-num'>{view_data['share']}</div>
 <div class='stat-sub'>{view_data['weekly_energy']}</div>
-<div class='body' style='margin-top:28px;'>{view_data['description']}</div>
+<div class='body' style='margin-top:20px;'>{view_data['description']}</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -477,7 +477,7 @@ with tab_flow:
     fig_sankey = go.Figure(go.Sankey(
         arrangement="snap",
         node=dict(
-            pad=22, thickness=14,
+            pad=18, thickness=12,
             line=dict(color=PAPER, width=0),
             label=sankey_nodes,
             color=[STEEL, SOLAR, INK, GREEN, GREEN2, GREEN3]
@@ -495,7 +495,7 @@ with tab_flow:
             ]
         )
     ))
-    style_fig(fig_sankey, height=460, margin=dict(l=0, r=0, t=10, b=10))
+    style_fig(fig_sankey, height=380, margin=dict(l=0, r=0, t=10, b=10))
     show(fig_sankey)
 
 # ----------------- TAB 4: FLOORS AND CARBON -----------------
@@ -510,10 +510,10 @@ with tab_floor:
             x=floor_weekly, y=floor_names, orientation='h',
             marker_color=FLOOR_COLORS, marker_line_width=0,
             text=[f"{v:,.0f} kWh" for v in floor_weekly],
-            textposition='outside', cliponaxis=False, textfont=dict(color=INK, size=13),
+            textposition='outside', cliponaxis=False, textfont=dict(color=INK, size=11),
             hovertemplate="%{y}: %{x:,.0f} kWh/week<extra></extra>"
         ))
-        style_fig(fig_floor, height=250, margin=dict(l=0, r=80, t=6, b=0))
+        style_fig(fig_floor, height=200, margin=dict(l=0, r=80, t=6, b=0))
         fig_floor.update_layout(xaxis_title="Estimated kWh per week", yaxis=dict(autorange="reversed"), bargap=0.4)
         fig_floor.update_xaxes(showgrid=True, gridcolor=GRID)
         fig_floor.update_yaxes(showgrid=False)
@@ -521,10 +521,10 @@ with tab_floor:
 
     with col_floor2:
         st.markdown(f"""
-<div style='margin-top:6px;'>
+<div style='margin-top:4px;'>
 <div class='stat-num'>Ground floor</div>
 <div class='stat-sub'>75.5% of total load, from the equipment schedule</div>
-<div class='body' style='margin-top:18px;'>Floor split is read directly from the 'Floor Level' column of the audited room-level equipment schedule, not a BIM-inferred assignment. Major ground-floor loads: central UPS banks (36 kW, 54 kW), substation transformers, and Electrical Machines/Power Systems lab motors.</div>
+<div class='body' style='margin-top:12px;'>Floor split is read directly from the 'Floor Level' column of the audited room-level equipment schedule, not a BIM-inferred assignment. Major ground-floor loads: central UPS banks (36 kW, 54 kW), substation transformers, and Electrical Machines/Power Systems lab motors.</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -541,10 +541,10 @@ with tab_floor:
         orientation='h',
         marker_color=FLOOR_COLORS, marker_line_width=0,
         text=[f"{v:.1f} tCO2/yr ({v / total_co2_block3_electricity * 100:.0f}%)" if total_co2_block3_electricity > 0 else f"{v:.1f} tCO2/yr" for v in floor_co2.values()],
-        textposition='outside', cliponaxis=False, textfont=dict(color=INK, size=13),
+        textposition='outside', cliponaxis=False, textfont=dict(color=INK, size=11),
         hovertemplate="%{y}: %{x:.1f} tCO2/yr<extra></extra>"
     ))
-    style_fig(fig_co2_bar, height=230, margin=dict(l=0, r=130, t=6, b=0))
+    style_fig(fig_co2_bar, height=190, margin=dict(l=0, r=130, t=6, b=0))
     fig_co2_bar.update_layout(xaxis_title="tCO2/yr", yaxis=dict(autorange="reversed"), bargap=0.4)
     fig_co2_bar.update_xaxes(showgrid=True, gridcolor=GRID)
     fig_co2_bar.update_yaxes(showgrid=False)
@@ -560,11 +560,11 @@ with tab_proj:
     temp_binned['temp_mid'] = [interval.mid for interval in temp_binned['temperature_C']]
     fig3 = go.Figure(go.Scatter(
         x=temp_binned['temp_mid'], y=temp_binned['predicted_electricity_kwh'], mode='lines+markers',
-        line=dict(color=GREEN, width=2.5), marker=dict(size=6, color=GREEN),
+        line=dict(color=GREEN, width=2.5), marker=dict(size=5, color=GREEN),
         fill='tozeroy', fillcolor='rgba(31,78,69,0.08)',
         hovertemplate="%{x}°C: %{y:,.1f} kWh/h<extra></extra>"
     ))
-    style_fig(fig3, height=330, margin=dict(l=0, r=0, t=10, b=0))
+    style_fig(fig3, height=270, margin=dict(l=0, r=0, t=10, b=0))
     fig3.update_layout(xaxis_title="Temperature (°C)", yaxis_title="Mean hourly kWh")
     show(fig3)
     note("Not measured Block 3 behavior. This reflects the trained model's general temperature response.")
@@ -579,10 +579,10 @@ with tab_proj:
     fig4 = go.Figure(go.Bar(
         x=[str(y) for y in years], y=proj_co2, marker_color=STEEL, marker_line_width=0,
         text=[f"{v:,.1f}" for v in proj_co2], textposition="outside", cliponaxis=False,
-        textfont=dict(color=INK2, size=12),
+        textfont=dict(color=INK2, size=11),
         hovertemplate="%{x}: %{y:,.1f} tCO2<extra></extra>"
     ))
-    style_fig(fig4, height=330, margin=dict(l=0, r=0, t=26, b=0))
+    style_fig(fig4, height=270, margin=dict(l=0, r=0, t=22, b=0))
     fig4.update_layout(yaxis_title="tCO2 / year", bargap=0.45)
     show(fig4)
     note(f"Scenario-based projected Block 3 electricity CO2, {years[0]} to {years[-1]}, under assumed usage growth ({usage_growth}%/yr) and climate trend ({climate_trend}%/yr). Not a measured or guaranteed forecast. Excludes diesel (campus-level, held constant, not projected here). Audit baseline year: Apr 2021–Mar 2022. Weather data reference period differs from the audit year.")
@@ -603,7 +603,7 @@ with tab_calib:
         x=hours_axis, y=calibrated_week, mode='lines', name='Calibrated XGBoost (calibrated ML estimate)',
         line=dict(color=GREEN, width=2.5)
     ))
-    style_fig(fig_1wk, height=360, legend=True, margin=dict(l=0, r=0, t=36, b=0))
+    style_fig(fig_1wk, height=300, legend=True, margin=dict(l=0, r=0, t=28, b=0))
     fig_1wk.update_layout(xaxis_title="Hour of week (0-167)", yaxis_title="kWh")
     show(fig_1wk)
 
@@ -684,7 +684,7 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
                                          y=[xgb_m['r2'], xgb_m['mae_kwh'], xgb_m['rmse_kwh']], marker_color=GREEN))
             fig_metrics.add_trace(go.Bar(name='Linear Regression (baseline)', x=metric_names,
                                          y=[base_m['r2'], base_m['mae_kwh'], base_m['rmse_kwh']], marker_color=GREEN3))
-            style_fig(fig_metrics, height=280, legend=True, margin=dict(l=0, r=0, t=36, b=0))
+            style_fig(fig_metrics, height=240, legend=True, margin=dict(l=0, r=0, t=28, b=0))
             fig_metrics.update_layout(barmode='group', bargap=0.35)
             show(fig_metrics)
 
@@ -695,7 +695,7 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
                 x=list(importances.values()), y=list(importances.keys()), orientation='h',
                 marker_color=GREEN2, marker_line_width=0
             ))
-            style_fig(fig_imp, height=280, margin=dict(l=0, r=10, t=10, b=0))
+            style_fig(fig_imp, height=240, margin=dict(l=0, r=10, t=10, b=0))
             fig_imp.update_layout(yaxis=dict(autorange="reversed"), bargap=0.35)
             fig_imp.update_xaxes(showgrid=True, gridcolor=GRID)
             fig_imp.update_yaxes(showgrid=False)
@@ -714,20 +714,20 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
     with r1:
         st.markdown("""
 <div class='stat-num'>67,904<span class='hero-unit'>kWh/yr</span></div>
-<div class='group-title' style='margin-top:10px;'>BLDC ceiling fan replacement</div>
+<div class='group-title' style='margin-top:8px;'>BLDC ceiling fan replacement</div>
 <div class='stat-sub'>Audited retrofit. Estimated savings, campus-wide.</div>
-<div class='body' style='margin-top:10px;'>Replacing standard induction ceiling fans with BLDC fans (East Coast Sustainable Pvt. Ltd., Apr 2022). Low unit cost, no operational cost increase, typically &lt;2 year payback at scale.</div>
+<div class='body' style='margin-top:8px;'>Replacing standard induction ceiling fans with BLDC fans (East Coast Sustainable Pvt. Ltd., Apr 2022). Low unit cost, no operational cost increase, typically &lt;2 year payback at scale.</div>
 """, unsafe_allow_html=True)
 
     with r2:
         st.markdown("""
 <div class='stat-num'>1,976<span class='hero-unit'>kWh/yr</span></div>
-<div class='group-title' style='margin-top:10px;'>SV-to-LED lighting replacement</div>
+<div class='group-title' style='margin-top:8px;'>SV-to-LED lighting replacement</div>
 <div class='stat-sub'>Audited retrofit. Estimated savings, campus-wide.</div>
-<div class='body' style='margin-top:10px;'>Replacing sodium-vapor/CFL fixtures with LED, same campus audit source. Zero recurring cost once installed, immediate effect, no scheduling or behavioral dependency.</div>
+<div class='body' style='margin-top:8px;'>Replacing sodium-vapor/CFL fixtures with LED, same campus audit source. Zero recurring cost once installed, immediate effect, no scheduling or behavioral dependency.</div>
 """, unsafe_allow_html=True)
 
-    st.markdown("<div class='group-title' style='margin-top:40px;'>No-cost operational measures</div>", unsafe_allow_html=True)
+    st.markdown("<div class='group-title' style='margin-top:28px;'>No-cost operational measures</div>", unsafe_allow_html=True)
     st.markdown("""
 - **UPS standby/float-charge audit (Ground Floor):** Ground Floor carries 75.5% of Block 3's estimated load, dominated by continuous-duty UPS banks (36 kW, 54 kW). A physical audit of which UPS loads genuinely require 24/7 uptime versus which could be scheduled off during nights/holidays targets the largest load driver.
 - **Lab/classroom equipment power-down enforcement:** Enforcing an equipment shutdown checklist after scheduled lab/class hours prevents after-hours idle draw.
