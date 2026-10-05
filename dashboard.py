@@ -735,82 +735,81 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
 """)
 import streamlit as st
 
-# Ensure wide layout is enabled in Streamlit configuration
-# st.set_page_config(layout="wide")
-
 st.markdown("""
 <style>
 /* ==========================================================================
-   STRICT TYPOGRAPHY & COMPOSITION CORRECTION (NO STRETCH / PRESERVE SIZES)
+   PRECISION COMPOSITION & TYPOGRAPHY CORRECTION (STRICT COMPLIANCE)
    ========================================================================== */
 
-/* 1. Controlled Page Container (75-90% Viewport Width, Centered) */
-.block-container {
-    max-width: 1440px !important; /* Prevents ultra-wide stretching */
-    width: 88% !important;
+/* 1. Page Frame: Occupies 80-85% of Viewport Naturally, Centered */
+.main .block-container {
+    max-width: 1280px !important;
+    width: 85% !important;
     margin: 0 auto !important;
-    padding-top: 1.5rem !important;
-    padding-bottom: 2rem !important;
-    padding-left: 1.5rem !important;
-    padding-right: 1.5rem !important;
+    padding-top: 2rem !important;
+    padding-bottom: 3rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
 }
 
-/* 2. Strict Typography Enforcements */
-html, body, [class*="css"], .stMarkdown, p, div {
-    font-size: 13px !important; /* Base body font size (12-13px) */
-    line-height: 1.55 !important;
-    letter-spacing: 0.15px !important;
+/* 2. Rule #1 Enforcement: Exact Minimum Readable Typography */
+/* Base Text & Paragraphs */
+html, body, [class*="css"], .stMarkdown, p, div, span, label {
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    letter-spacing: 0.01em !important;
 }
 
-/* Main Page Title (20–24 px) */
-h1, .main-title, div[data-testid="stHeader"] h1 {
-    font-size: 22px !important;
+/* Main Page Title (20-24px) */
+h1, .main-title, div[data-testid="stHeader"] h1, [data-testid="stMarkdownContainer"] h1 {
+    font-size: 24px !important;
     font-weight: 700 !important;
     line-height: 1.3 !important;
+    margin-bottom: 16px !important;
+}
+
+/* Section Headings (14-16px) */
+h2, h3, .section-header, [data-testid="stMarkdownContainer"] h2, [data-testid="stMarkdownContainer"] h3 {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    margin-top: 24px !important;
     margin-bottom: 12px !important;
 }
 
-/* Section Headings (14–16 px) */
-h2, h3, .section-header, div[data-testid="stMarkdownContainer"] h2, div[data-testid="stMarkdownContainer"] h3 {
-    font-size: 15px !important;
-    font-weight: 600 !important;
-    line-height: 1.4 !important;
-    margin-top: 18px !important;
-    margin-bottom: 10px !important;
-}
-
-/* KPI Numbers (36–44 px) */
-div[data-testid="stMetricValue"] {
-    font-size: 38px !important;
+/* KPI Metrics (36-44px) */
+div[data-testid="stMetricValue"] * {
+    font-size: 40px !important;
     font-weight: 700 !important;
     line-height: 1.1 !important;
 }
 
-/* KPI Labels (12–13 px) */
-div[data-testid="stMetricLabel"] {
+/* KPI Labels (12-13px) */
+div[data-testid="stMetricLabel"] * {
     font-size: 13px !important;
     font-weight: 500 !important;
+    line-height: 1.3 !important;
     margin-bottom: 4px !important;
 }
 
-/* Sidebar Labels/Text (11–12 px) */
-section[data-testid="stSidebar"] * {
+/* Sidebar Labels/Text (11-12px) */
+section[data-testid="stSidebar"] *, section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span {
     font-size: 12px !important;
-    line-height: 1.4 !important;
+    line-height: 1.5 !important;
 }
 
-/* Chart Axis Labels & Secondary Text (10–12 px) */
-.small-note, .caption, div[data-testid="stCaptionContainer"] {
+/* Chart Annotations, Secondary Notes & Captions (10-12px) */
+.small-note, .caption, [data-testid="stCaptionContainer"] *, small {
     font-size: 11px !important;
     line-height: 1.4 !important;
 }
 
-/* 3. Balanced KPI Grouping (Compact & Connected, Not Stretched Edge-to-Edge) */
+/* 3. Rule #2 Enforcement: Compact KPI Grouping (No Stretching) */
 div[data-testid="stHorizontalBlock"]:has(div[data-testid="stMetric"]) {
-    max-width: 900px !important; /* Keeps the 3 KPIs tight and visually connected */
-    gap: 32px !important;
+    max-width: 760px !important; /* Locks 169.9 MWh/yr, 72.7 tCO₂/yr, 39.7% close together */
+    gap: 28px !important;
     margin-top: 12px !important;
-    margin-bottom: 24px !important;
+    margin-bottom: 28px !important;
 }
 
 div[data-testid="stMetric"] {
@@ -818,33 +817,31 @@ div[data-testid="stMetric"] {
     padding: 0 !important;
 }
 
-/* 4. Controlled Explanation & Body Text Width (500–750 px max) */
+/* 4. Rule #3 Enforcement: Controlled Explanation / Body Width */
 .stMarkdown p, .explanation-text {
-    max-width: 720px !important;
+    max-width: 680px !important; /* Ideal reading measure (500-750px) */
     text-align: left !important;
-}
-
-/* 5. Chart Proportions & Spacing (Monthly Electricity Chart) */
-.stPlotlyChart, .stVegaLiteChart, .stElementContainer:has(.stPlotlyChart) {
-    max-width: 100% !important;
-    min-height: 400px !important; /* Slightly taller for vertical fill without horizontal distortion */
-    margin-top: 8px !important;
-    margin-bottom: 20px !important;
-}
-
-/* 6. Supporting Figures (2 Clean Aligned Columns) */
-.supporting-figures-container {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 40px !important;
-    max-width: 1100px !important;
-    margin-top: 16px !important;
-}
-
-/* Vertical Rhythm & Section Spacing */
-.element-container, div[data-testid="stVerticalBlock"] > div {
     margin-bottom: 12px !important;
 }
 
+/* 5. Monthly Electricity Chart Proportions */
+.stPlotlyChart, .stVegaLiteChart, [data-testid="stElementContainer"]:has(.stPlotlyChart) {
+    max-width: 920px !important; /* Keeps chart proportioned, avoiding ultra-wide stretch */
+    min-height: 420px !important; /* Fills vertical empty space naturally */
+    margin-top: 12px !important;
+    margin-bottom: 28px !important;
+}
+
+/* 6. Supporting Figures Alignment (2 Clean Columns) */
+div[data-testid="stHorizontalBlock"]:has(.supporting-figure-col) {
+    max-width: 1000px !important;
+    gap: 48px !important;
+    margin-top: 16px !important;
+}
+
+/* Vertical Spacing & Rhythm */
+[data-testid="stVerticalBlock"] > div {
+    margin-bottom: 14px !important;
+}
 </style>
 """, unsafe_allow_html=True)
