@@ -38,11 +38,12 @@ st.markdown("""
 .stApp { background: var(--paper); color: var(--ink); font-family: 'Public Sans', 'Helvetica Neue', Arial, sans-serif; }
 header[data-testid="stHeader"] { background: transparent; }
 #MainMenu, footer { visibility: hidden; }
-.block-container { max-width: 1200px; padding-top: 2.4rem; padding-bottom: 5rem; }
+.block-container, [data-testid="stMainBlockContainer"] { max-width: none !important; width: 100%; padding: 2.4rem 2.75rem 5rem 2.75rem; }
 .stApp p, .stApp li, .stApp label, .stApp span { color: var(--ink); }
 
 /* ---- sidebar ---- */
 [data-testid="stSidebar"] { background: #E1DFD8; border-right: 1px solid var(--rule); }
+[data-testid="stSidebar"][aria-expanded="true"] { width: 268px !important; min-width: 268px !important; max-width: 268px !important; }
 [data-testid="stSidebar"] h2 { font-family: 'Archivo', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0; }
 [data-testid="stSidebar"] hr { border-color: var(--rule); }
 [data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color: var(--ink3); }
@@ -78,7 +79,7 @@ header[data-testid="stHeader"] { background: transparent; }
 .prose2 { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; margin: 22px 0 0 0; }
 .prose2 p { font-size: 15px; line-height: 1.65; color: var(--ink); margin: 0 0 10px 0; max-width: 62ch; }
 .prose2 b { font-weight: 600; }
-.note { font-size: 12.5px; line-height: 1.55; color: var(--ink3); margin: 8px 0 0 0; max-width: 90ch; }
+.note { font-size: 12.5px; line-height: 1.55; color: var(--ink3); margin: 8px 0 0 0; max-width: 120ch; }
 .body { font-size: 14.5px; line-height: 1.65; color: var(--ink); max-width: 64ch; }
 
 /* ---- ledger: label left, value right, hairline rows ---- */
@@ -91,7 +92,7 @@ header[data-testid="stHeader"] { background: transparent; }
 .ledger-cols.three { grid-template-columns: 1fr 1fr 1fr; gap: 44px; }
 
 /* ---- caveats: the only place a rule line is used on a block ---- */
-.caveat { border-left: 3px solid var(--solar); padding: 2px 0 2px 16px; margin: 22px 0; max-width: 88ch; }
+.caveat { border-left: 3px solid var(--solar); padding: 2px 0 2px 16px; margin: 22px 0; max-width: 120ch; }
 .caveat.brick { border-left-color: var(--brick); }
 .caveat-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
 .caveat-body { font-size: 13.5px; line-height: 1.6; color: var(--ink2); }
