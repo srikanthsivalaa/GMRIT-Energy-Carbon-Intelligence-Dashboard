@@ -671,7 +671,6 @@ with tab_audit:
 
         # ---------------- SELECTED MODEL ----------------
         selected_raw = model_metrics.get("selected_model", "XGBoost")
-        # Ensure proper casing for XGBoost
         selected_model = "XGBoost" if selected_raw.lower() == "xgboost" else selected_raw
 
         st.markdown(
@@ -715,7 +714,7 @@ with tab_audit:
             model_metrics[k]["rmse_kwh"] for k in model_keys
         ]
 
-        # Use subplots with secondary y-axis so R² (0-1) is clearly visible alongside kWh metrics (0-250+)
+        # Use dual y-axis so R² (0 to 1) sits on secondary axis and error sit on primary axis
         fig_model = make_subplots(specs=[[{"secondary_y": True}]])
 
         fig_model.add_trace(
@@ -756,7 +755,7 @@ with tab_audit:
 
         style_fig(
             fig_model,
-            height=340,
+            height=360,
             legend=True,
             margin=dict(l=0, r=0, t=30, b=0)
         )
@@ -875,11 +874,11 @@ with tab_audit:
     on the held-out BDG2 test set.
     <br><br>
     <b>Why XGBoost over Gradient Boosting?</b><br>
-    Although Gradient Boosting yielded a slightly higher nominal R² on the test set, XGBoost was selected because:
+    While Gradient Boosting exhibits a marginally higher nominal R² on the test set, XGBoost was selected as the operational production model for several technical reasons:
     <ul>
-      <li><b>Generalization & Regularization:</b> XGBoost incorporates L1/L2 regularization to prevent overfitting when predicting on unmetered campus infrastructure.</li>
-      <li><b>Balanced Error Metrics:</b> XGBoost achieved lower overall prediction error variance (lower MAE/RMSE across edge-case temperature conditions).</li>
-      <li><b>Computational Efficiency:</b> Execution speed and feature importance interpretability are significantly superior for operational dashboard recalibration.</li>
+      <li><b>Built-in Regularization:</b> XGBoost incorporates L1 and L2 penalty terms, reducing risk of overfitting on unmetered campus infrastructure during calibration.</li>
+      <li><b>Generalization Stability:</b> XGBoost provides lower variance across out-of-sample climate/temperature extremes compared to standard Gradient Boosting.</li>
+      <li><b>Efficiency & Scalability:</b> Faster inference times and robust handling of feature sparsity make it significantly better suited for interactive dashboard re-scaling.</li>
     </ul>
     The model uses building characteristics together with weather and temporal features to estimate electricity demand.
     </div>
