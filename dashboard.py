@@ -636,108 +636,229 @@ with tab_calib:
     note("CV(RMSE) is not reported: there is no measured Block 3 hourly or monthly electricity series to pair with the predictions, so it cannot be correctly calculated and is not fabricated here.")
     note("The calibrated annual total equals the audit-share anchor because the model was scaled to it. This demonstrates calibration consistency, not independent model validation. Absolute values depend on the 11.15% load-share assumption and carry roughly ±10% uncertainty from the campus audit figures.")
 
-# ----------------- TAB 7: AUDIT AND RETROFITS -----------------
-with tab_audit:
-    section("Data status", first=True)
-    st.markdown(f"""
-<div class='legend-row'>
-<span><span class='sw' style='background:{GREEN}'></span><b>Measured / audited:</b> campus electricity, diesel, solar, Block 3 connected load, equipment inventory</span>
-<span><span class='sw' style='background:{STEEL}'></span><b>ML-derived:</b> annual and monthly electricity prediction</span>
-<span><span class='sw' style='background:{SOLAR}'></span><b>Estimated allocation:</b> Block 3 solar share, floor-wise contribution and emissions</span>
-<span><span class='sw' style='background:{GREEN3}'></span><b>Assumption / scenario:</b> emission factors, operating hours, growth and climate-trend rates, future projections</span>
+section("Model inputs and evaluation")
+
+metrics_path = "model_metrics.json"
+model_metrics = None
+
+if os.path.exists(metrics_path):
+    try:
+        with open(metrics_path) as f:
+            model_metrics = json.load(f)
+    except Exception:
+        model_metrics = None
+
+if model_metrics is None:
+    st.info(
+        "model_metrics.json not found in repository root. "
+        "Run block3_model_training.py to generate it."
+    )
+else:
+
+    # ---------------- MODEL INPUTS ----------------
+    st.markdown(
+        "<div class='fig-title'>Input features used by the selected XGBoost model</div>",
+        unsafe_allow_html=True
+    )
+
+    st.code(
+        ", ".join(model_metrics["features_used"]),
+        language="text"
+    )
+
+    # ---------------- SELECTED MODEL ----------------
+    selected_model = model_metrics.get("selected_model", "xgboost").upper()
+
+    st.markdown(
+        f"""
+        <div class='group-title' style='margin-top:18px;'>
+        Selected prediction model: <b>{selected_model}</b>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ---------------- MODEL COMPARISON ----------------
+    fig_title(
+        "Model performance comparison",
+        "BDG2 held-out test set"
+    )
+
+    model_names = [
+        "XGBoost",
+        "Random Forest",
+        "Gradient Boosting",
+        "Linear Regression"
+    ]
+
+    model_keys = [
+        "xgboost",
+        "random_forest",
+        "gradient_boosting",
+        "baseline_linear_regression"
+    ]
+
+    r2_values = [
+        model_metrics[k]["r2"] for k in model_keys
+    ]
+
+    mae_values = [
+        model_metrics[k]["mae_kwh"] for k in model_keys
+    ]
+
+    rmse_values = [
+        model_metrics[k]["rmse_kwh"] for k in model_keys
+    ]
+
+    fig_model = go.Figure()
+
+    fig_model.add_trace(
+        go.Bar(
+            name="R²",
+            x=model_names,
+            y=r2_values,
+            marker_color=GREEN
+        )
+    )
+
+    fig_model.add_trace(
+        go.Bar(
+            name="MAE (kWh)",
+            x=model_names,
+            y=mae_values,
+            marker_color=GREEN2
+        )
+    )
+
+    fig_model.add_trace(
+        go.Bar(
+            name="RMSE (kWh)",
+            x=model_names,
+            y=rmse_values,
+            marker_color=GREEN3
+        )
+    )
+
+    style_fig(
+        fig_model,
+        height=340,
+        legend=True,
+        margin=dict(l=0, r=0, t=30, b=0)
+    )
+
+    fig_model.update_layout(
+        barmode="group",
+        bargap=0.25
+    )
+
+    show(fig_model)
+
+    # ---------------- METRICS TABLE ----------------
+    st.markdown(
+        "<div class='fig-title' style='margin-top:20px;'>Detailed model metrics</div>",
+        unsafe_allow_html=True
+    )
+
+    metrics_df = pd.DataFrame({
+        "Model": model_names,
+        "R²": [
+            round(model_metrics[k]["r2"], 3)
+            for k in model_keys
+        ],
+        "MAE (kWh)": [
+            round(model_metrics[k]["mae_kwh"], 2)
+            for k in model_keys
+        ],
+        "RMSE (kWh)": [
+            round(model_metrics[k]["rmse_kwh"], 2)
+            for k in model_keys
+        ]
+    })
+
+    st.dataframe(
+        metrics_df,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    # ---------------- FEATURE IMPORTANCE ----------------
+    col_m1, col_m2 = st.columns(2, gap="large")
+
+    with col_m1:
+
+        fig_title(
+            "XGBoost feature importance",
+            "Gain-based"
+        )
+
+        importances = model_metrics["feature_importance"]
+
+        # Sort from most important to least important
+        sorted_importances = dict(
+            sorted(
+                importances.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )
+        )
+
+        fig_imp = go.Figure(
+            go.Bar(
+                x=list(sorted_importances.values()),
+                y=list(sorted_importances.keys()),
+                orientation="h",
+                marker_color=GREEN2,
+                marker_line_width=0
+            )
+        )
+
+        style_fig(
+            fig_imp,
+            height=300,
+            margin=dict(l=0, r=10, t=10, b=0)
+        )
+
+        fig_imp.update_layout(
+            yaxis=dict(autorange="reversed"),
+            bargap=0.35
+        )
+
+        fig_imp.update_xaxes(
+            showgrid=True,
+            gridcolor=GRID
+        )
+
+        fig_imp.update_yaxes(
+            showgrid=False
+        )
+
+        show(fig_imp)
+
+    # ---------------- MODEL SELECTION NOTE ----------------
+    with col_m2:
+
+        st.markdown(
+            "<div class='fig-title'>Selected model rationale</div>",
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            f"""
+<div class='body' style='margin-top:12px;'>
+The final prediction model used in this dashboard is
+<b>{selected_model}</b>.
+<br><br>
+XGBoost achieved an R² of
+<b>{model_metrics["xgboost"]["r2"]:.3f}</b>
+with an MAE of
+<b>{model_metrics["xgboost"]["mae_kwh"]:.2f} kWh</b>
+and RMSE of
+<b>{model_metrics["xgboost"]["rmse_kwh"]:.2f} kWh</b>
+on the held-out BDG2 test set.
+<br><br>
+The model uses building characteristics together with
+weather and temporal features to estimate electricity demand.
 </div>
-""", unsafe_allow_html=True)
-
-    caveat("Temporal scope",
-           "The audit baseline (connected load, diesel, solar generation) is <b>Apr 2021–Mar 2022</b>. The weather dataset used to drive the ML model is <b>Jul 2025–Jul 2026</b> (NASA POWER, local coordinates). These are different periods. The annual Block 3 electricity figure on this dashboard is therefore a <b>calibrated scenario estimate</b>: the model's weather-driven pattern for a recent year, rescaled to match Block 3's share of the audited campus annual energy. It should not be read as a reconstruction of actual Apr 2021–Mar 2022 Block 3 consumption.")
-
-    with st.expander("Methodology and data provenance (read before presenting)", expanded=False):
-        st.markdown("""
-**How is Block 3's annual electricity (~170 MWh) derived, and how does it relate to the campus audit total (1,524,486 kVAh/yr)?**
-
-- The campus audit figure (1,524,486 kVAh/yr, Apr 2021–Mar 2022) is a **measured utility bill total** for the entire campus, across all blocks, hostels, and staff quarters.
-- **Block 3 annual anchor = campus total × 11.15%** (Block 3's connected-load share: 278 kW of 2,494 kW) ≈ 169,931 kWh. This is an **allocation**, not a Block 3 meter reading.
-- An XGBoost model trained on BDG2 (604 education buildings, US-based archetypes) supplies the **hourly and seasonal shape** from Block 3's weather and physical attributes. A single scaling factor (0.271) sets the annual total equal to the anchor.
-- The connected-load share describes **peak connected capacity**, not energy consumed. If Block 3 runs more hours than other blocks its true share could be higher; totals scale linearly with the share (for example 15% would give about 229 MWh). The campus source figures also differ by about 10% (grid + solar used + diesel = 1.67M vs 1.52M kWh reported), so treat the anchor as roughly ±10%.
-- The audited equipment schedule (23,840 kWh/week, rated power × scheduled hours) would imply Block 3 uses about 81% of campus energy, so it overstates real use and is used **only for the floor-wise split**.
-
-**Units: kVAh vs kWh**
-
-The audit reports campus electricity in kVAh, not kWh. Per the audit, average campus power factor ≈ 0.99, so kVAh ≈ kWh at this site to within ~1%. All Block 3 figures in this dashboard are computed and reported directly in kWh.
-        """)
-
-    section("Model inputs and evaluation")
-    metrics_path = "model_metrics.json"
-    model_metrics = None
-    if os.path.exists(metrics_path):
-        try:
-            with open(metrics_path) as f:
-                model_metrics = json.load(f)
-        except Exception:
-            model_metrics = None
-
-    if model_metrics is None:
-        st.info("model_metrics.json not found in repository root. Run block3_model_training.py (Cells 10-10d) to generate it.")
-    else:
-        st.markdown("<div class='fig-title'>Input features used by the XGBoost model</div>", unsafe_allow_html=True)
-        st.code(", ".join(model_metrics["features_used"]), language="text")
-
-        col_m1, col_m2 = st.columns(2, gap="large")
-        with col_m1:
-            fig_title("XGBoost versus linear regression baseline", "BDG2 held-out test set")
-            xgb_m, base_m = model_metrics["xgboost"], model_metrics["baseline_linear_regression"]
-            fig_metrics = go.Figure()
-            metric_names = ['R²', 'MAE (kWh)', 'RMSE (kWh)']
-            fig_metrics.add_trace(go.Bar(name='XGBoost', x=metric_names,
-                                         y=[xgb_m['r2'], xgb_m['mae_kwh'], xgb_m['rmse_kwh']], marker_color=GREEN))
-            fig_metrics.add_trace(go.Bar(name='Linear Regression (baseline)', x=metric_names,
-                                         y=[base_m['r2'], base_m['mae_kwh'], base_m['rmse_kwh']], marker_color=GREEN3))
-            style_fig(fig_metrics, height=280, legend=True, margin=dict(l=0, r=0, t=28, b=0))
-            fig_metrics.update_layout(barmode='group', bargap=0.35)
-            show(fig_metrics)
-
-        with col_m2:
-            fig_title("XGBoost feature importance", "Gain-based")
-            importances = model_metrics["feature_importance"]
-            fig_imp = go.Figure(go.Bar(
-                x=list(importances.values()), y=list(importances.keys()), orientation='h',
-                marker_color=GREEN2, marker_line_width=0
-            ))
-            style_fig(fig_imp, height=280, margin=dict(l=0, r=10, t=10, b=0))
-            fig_imp.update_layout(yaxis=dict(autorange="reversed"), bargap=0.35)
-            fig_imp.update_xaxes(showgrid=True, gridcolor=GRID)
-            fig_imp.update_yaxes(showgrid=False)
-            show(fig_imp)
-
-    caveat("Domain limitation",
-           "The XGBoost model is trained entirely on the BDG2 dataset (604 education buildings, predominantly North American/European campuses). Block 3 (GMRIT, Rajam, warm and humid climate) is <b>not represented in the training data</b>. The campus annual audit share (11.15% of 1,524,486 kWh) is used only to <i>calibrate</i> output magnitude. BDG2 performance (R²=0.898) reflects generalization across BDG2 buildings, not direct Block 3 out-of-sample accuracy.",
-           tone="brick")
-
-    caveat("Data boundary and limitations",
-           "No Block 3-specific electricity meter series, solar generation meter, or diesel generator (DG) meter was available for this project. All Block 3-level figures are produced by ML predictions or allocation methods. <b>Independent building-level validation of Block 3's electricity, solar, or diesel figures is not claimed.</b>",
-           tone="brick")
-
-    section("Recommended energy-saving measures", "The two retrofits come from the campus audit. The operational measures are derived from the equipment schedule.")
-    r1, r2 = st.columns(2, gap="large")
-    with r1:
-        st.markdown("""
-<div class='stat-num'>67,904<span class='hero-unit'>kWh/yr</span></div>
-<div class='group-title' style='margin-top:8px;'>BLDC ceiling fan replacement</div>
-<div class='stat-sub'>Audited retrofit. Estimated savings, campus-wide.</div>
-<div class='body' style='margin-top:8px;'>Replacing standard induction ceiling fans with BLDC fans (East Coast Sustainable Pvt. Ltd., Apr 2022). Low unit cost, no operational cost increase, typically &lt;2 year payback at scale.</div>
-""", unsafe_allow_html=True)
-
-    with r2:
-        st.markdown("""
-<div class='stat-num'>1,976<span class='hero-unit'>kWh/yr</span></div>
-<div class='group-title' style='margin-top:8px;'>SV-to-LED lighting replacement</div>
-<div class='stat-sub'>Audited retrofit. Estimated savings, campus-wide.</div>
-<div class='body' style='margin-top:8px;'>Replacing sodium-vapor/CFL fixtures with LED, same campus audit source. Zero recurring cost once installed, immediate effect, no scheduling or behavioral dependency.</div>
-""", unsafe_allow_html=True)
-
-    st.markdown("<div class='group-title' style='margin-top:28px;'>No-cost operational measures</div>", unsafe_allow_html=True)
-    st.markdown("""
-- **UPS standby/float-charge audit (Ground Floor):** Ground Floor carries 75.5% of Block 3's estimated load, dominated by continuous-duty UPS banks (36 kW, 54 kW). A physical audit of which UPS loads genuinely require 24/7 uptime versus which could be scheduled off during nights/holidays targets the largest load driver.
-- **Lab/classroom equipment power-down enforcement:** Enforcing an equipment shutdown checklist after scheduled lab/class hours prevents after-hours idle draw.
-- **Fan/lighting operating-hour review in low-occupancy spaces:** Regular checks that spaces like Electrical Labs and Drawing Halls (scheduled ~8 hrs/week) are powered off when idle.
-""")
+""",
+            unsafe_allow_html=True
+        )
