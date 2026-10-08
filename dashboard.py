@@ -682,7 +682,7 @@ with tab_audit:
             unsafe_allow_html=True
         )
 
-        # ---------------- MODEL COMPARISON ----------------
+# ---------------- MODEL COMPARISON ----------------
         fig_title(
             "Model performance comparison",
             "BDG2 held-out test set"
@@ -714,21 +714,10 @@ with tab_audit:
             model_metrics[k]["rmse_kwh"] for k in model_keys
         ]
 
-        # Use dual y-axis so R² (0 to 1) sits on secondary axis and error sit on primary axis
+        # Use dual y-axis: Bars for Errors (Primary Y) + Line for R² (Secondary Y)
         fig_model = make_subplots(specs=[[{"secondary_y": True}]])
 
-        fig_model.add_trace(
-            go.Bar(
-                name="R²",
-                x=model_names,
-                y=r2_values,
-                marker_color=GREEN,
-                text=[f"{v:.2f}" for v in r2_values],
-                textposition="outside"
-            ),
-            secondary_y=True
-        )
-
+        # MAE Bar Chart
         fig_model.add_trace(
             go.Bar(
                 name="MAE (kWh)",
@@ -741,6 +730,7 @@ with tab_audit:
             secondary_y=False
         )
 
+        # RMSE Bar Chart
         fig_model.add_trace(
             go.Bar(
                 name="RMSE (kWh)",
@@ -751,6 +741,21 @@ with tab_audit:
                 textposition="outside"
             ),
             secondary_y=False
+        )
+
+        # R² Line Trace on Secondary Axis to avoid bar occlusion
+        fig_model.add_trace(
+            go.Scatter(
+                name="R²",
+                x=model_names,
+                y=r2_values,
+                mode="lines+markers+text",
+                line=dict(color=GREEN, width=3),
+                marker=dict(size=8),
+                text=[f"{v:.2f}" for v in r2_values],
+                textposition="top center"
+            ),
+            secondary_y=True
         )
 
         style_fig(
@@ -769,34 +774,6 @@ with tab_audit:
         fig_model.update_yaxes(title_text="R² Score", secondary_y=True, range=[0, 1.15], showgrid=False)
 
         show(fig_model)
-
-        # ---------------- METRICS TABLE ----------------
-        st.markdown(
-            "<div class='fig-title' style='margin-top:20px;'>Detailed model metrics</div>",
-            unsafe_allow_html=True
-        )
-
-        metrics_df = pd.DataFrame({
-            "Model": model_names,
-            "R²": [
-                f"{model_metrics[k]['r2']:.2f}"
-                for k in model_keys
-            ],
-            "MAE (kWh)": [
-                f"{model_metrics[k]['mae_kwh']:.2f}"
-                for k in model_keys
-            ],
-            "RMSE (kWh)": [
-                f"{model_metrics[k]['rmse_kwh']:.2f}"
-                for k in model_keys
-            ]
-        })
-
-        st.dataframe(
-            metrics_df,
-            use_container_width=True,
-            hide_index=True
-        )
 
         # ---------------- FEATURE IMPORTANCE ----------------
         col_m1, col_m2 = st.columns(2, gap="large")
