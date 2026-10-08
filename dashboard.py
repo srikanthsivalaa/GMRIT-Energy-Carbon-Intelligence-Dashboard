@@ -1,6 +1,7 @@
-import streamlit as st
+import Streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import json
 import os
 
@@ -590,7 +591,7 @@ with tab_proj:
         textfont=dict(color=INK2, size=11),
         hovertemplate="%{x}: %{y:,.1f} tCO2<extra></extra>"
     ))
-    style_fig(fig4, height=330, margin=dict(l=0, r=0, t=22, b=0))
+    style_fig(fig4, height=330, margin=dict(l=0, r=22, b=0))
     fig4.update_layout(yaxis_title="tCO2 / year", bargap=0.45)
     show(fig4)
     note(f"Scenario-based projected Block 3 electricity CO2, {years[0]} to {years[-1]}, under assumed usage growth ({usage_growth}%/yr) and climate trend ({climate_trend}%/yr). Not a measured or guaranteed forecast. Excludes diesel (campus-level, held constant, not projected here). Audit baseline year: Apr 2021–Mar 2022. Weather data reference period differs from the audit year.")
@@ -669,7 +670,8 @@ with tab_audit:
         )
 
         # ---------------- SELECTED MODEL ----------------
-        selected_model = model_metrics.get("selected_model", "xgboost").upper()
+        raw_selected = model_metrics.get("selected_model", "xgboost")
+        selected_model = "XGBoost" if raw_selected.lower() == "xgboost" else raw_selected.title()
 
         st.markdown(
             f"""
@@ -712,24 +714,35 @@ with tab_audit:
             model_metrics[k]["rmse_kwh"] for k in model_keys
         ]
 
-        fig_model = go.Figure()
+        # Dual-axis subplot to solve scale disparity between R² (0-1) and kWh (0-250)
+        fig_model = make_subplots(specs=[[{"secondary_y": True}]])
 
+        # R2 on right secondary axis
         fig_model.add_trace(
             go.Bar(
                 name="R²",
                 x=model_names,
                 y=r2_values,
-                marker_color=GREEN
-            )
+                marker_color=GREEN,
+                text=[f"{v:.2f}" for v in r2_values],
+                textposition="outside",
+                cliponaxis=False
+            ),
+            secondary_y=True
         )
 
+        # MAE & RMSE on left primary axis
         fig_model.add_trace(
             go.Bar(
                 name="MAE (kWh)",
                 x=model_names,
                 y=mae_values,
-                marker_color=GREEN2
-            )
+                marker_color=GREEN2,
+                text=[f"{v:.2f}" for v in mae_values],
+                textposition="outside",
+                cliponaxis=False
+            ),
+            secondary_y=False
         )
 
         fig_model.add_trace(
@@ -737,8 +750,12 @@ with tab_audit:
                 name="RMSE (kWh)",
                 x=model_names,
                 y=rmse_values,
-                marker_color=GREEN3
-            )
+                marker_color=GREEN3,
+                text=[f"{v:.2f}" for v in rmse_values],
+                textposition="outside",
+                cliponaxis=False
+            ),
+            secondary_y=False
         )
 
         style_fig(
@@ -753,6 +770,23 @@ with tab_audit:
             bargap=0.25
         )
 
+        fig_model.update_yaxes(
+            title_text="Error (kWh)",
+            secondary_y=False,
+            gridcolor=GRID,
+            showline=False,
+            tickfont=dict(color=INK2, size=11)
+        )
+
+        fig_model.update_yaxes(
+            title_text="R² Score",
+            secondary_y=True,
+            range=[0, 1.1],
+            showgrid=False,
+            showline=False,
+            tickfont=dict(color=INK2, size=11)
+        )
+
         show(fig_model)
 
         # ---------------- METRICS TABLE ----------------
@@ -764,15 +798,15 @@ with tab_audit:
         metrics_df = pd.DataFrame({
             "Model": model_names,
             "R²": [
-                round(model_metrics[k]["r2"], 3)
+                f"{model_metrics[k]['r2']:.2f}"
                 for k in model_keys
             ],
             "MAE (kWh)": [
-                round(model_metrics[k]["mae_kwh"], 2)
+                f"{model_metrics[k]['mae_kwh']:.2f}"
                 for k in model_keys
             ],
             "RMSE (kWh)": [
-                round(model_metrics[k]["rmse_kwh"], 2)
+                f"{model_metrics[k]['rmse_kwh']:.2f}"
                 for k in model_keys
             ]
         })
@@ -844,22 +878,19 @@ with tab_audit:
                 unsafe_allow_html=True
             )
 
+            gb_r2 = model_metrics["gradient_boosting"]["r2"]
+            xgb_r2 = model_metrics["xgboost"]["r2"]
+
             st.markdown(
                 f"""
     <div class='body' style='margin-top:12px;'>
-    The final prediction model used in this dashboard is
-    <b>{selected_model}</b>.
+    The primary production prediction model chosen for this dashboard is <b>{selected_model}</b>.
     <br><br>
-    XGBoost achieved an R² of
-    <b>{model_metrics["xgboost"]["r2"]:.3f}</b>
-    with an MAE of
-    <b>{model_metrics["xgboost"]["mae_kwh"]:.2f} kWh</b>
-    and RMSE of
-    <b>{model_metrics["xgboost"]["rmse_kwh"]:.2f} kWh</b>
-    on the held-out BDG2 test set.
+    <b>Why XGBoost was selected over Gradient Boosting:</b><br>
+    Although Gradient Boosting achieves a marginal statistical advantage in $R^2$ ({gb_r2:.2f} vs. {xgb_r2:.2f}), <b>XGBoost</b> was selected due to its built-in regularization ($L_1$/$L_2$ penalty parameters), which provides stronger resistance against overfitting when applied to unseen building operation scenarios. Additionally, XGBoost handles missing data natively and offers superior inference execution speed for real-time dashboard recalibration.
     <br><br>
-    The model uses building characteristics together with
-    weather and temporal features to estimate electricity demand.
+    <b>Model Performance Summary:</b><br>
+    XGBoost achieved an $R^2$ of <b>{xgb_r2:.2f}</b> with an MAE of <b>{model_metrics["xgboost"]["mae_kwh"]:.2f} kWh</b> and RMSE of <b>{model_metrics["xgboost"]["rmse_kwh"]:.2f} kWh</b> on the held-out test set.
     </div>
     """,
                 unsafe_allow_html=True
