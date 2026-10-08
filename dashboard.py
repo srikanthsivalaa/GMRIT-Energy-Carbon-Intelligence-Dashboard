@@ -636,229 +636,231 @@ with tab_calib:
     note("CV(RMSE) is not reported: there is no measured Block 3 hourly or monthly electricity series to pair with the predictions, so it cannot be correctly calculated and is not fabricated here.")
     note("The calibrated annual total equals the audit-share anchor because the model was scaled to it. This demonstrates calibration consistency, not independent model validation. Absolute values depend on the 11.15% load-share assumption and carry roughly ±10% uncertainty from the campus audit figures.")
 
-section("Audit and retrofits")
+# ----------------- TAB 7: AUDIT AND RETROFITS -----------------
+with tab_audit:
+    section("Audit and retrofits", first=True)
 
-metrics_path = "model_metrics.json"
-model_metrics = None
+    metrics_path = "model_metrics.json"
+    model_metrics = None
 
-if os.path.exists(metrics_path):
-    try:
-        with open(metrics_path) as f:
-            model_metrics = json.load(f)
-    except Exception:
-        model_metrics = None
+    if os.path.exists(metrics_path):
+        try:
+            with open(metrics_path) as f:
+                model_metrics = json.load(f)
+        except Exception:
+            model_metrics = None
 
-if model_metrics is None:
-    st.info(
-        "model_metrics.json not found in repository root. "
-        "Run block3_model_training.py to generate it."
-    )
-else:
-
-    # ---------------- MODEL INPUTS ----------------
-    st.markdown(
-        "<div class='fig-title'>Input features used by the selected XGBoost model</div>",
-        unsafe_allow_html=True
-    )
-
-    st.code(
-        ", ".join(model_metrics["features_used"]),
-        language="text"
-    )
-
-    # ---------------- SELECTED MODEL ----------------
-    selected_model = model_metrics.get("selected_model", "xgboost").upper()
-
-    st.markdown(
-        f"""
-        <div class='group-title' style='margin-top:18px;'>
-        Selected prediction model: <b>{selected_model}</b>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # ---------------- MODEL COMPARISON ----------------
-    fig_title(
-        "Model performance comparison",
-        "BDG2 held-out test set"
-    )
-
-    model_names = [
-        "XGBoost",
-        "Random Forest",
-        "Gradient Boosting",
-        "Linear Regression"
-    ]
-
-    model_keys = [
-        "xgboost",
-        "random_forest",
-        "gradient_boosting",
-        "baseline_linear_regression"
-    ]
-
-    r2_values = [
-        model_metrics[k]["r2"] for k in model_keys
-    ]
-
-    mae_values = [
-        model_metrics[k]["mae_kwh"] for k in model_keys
-    ]
-
-    rmse_values = [
-        model_metrics[k]["rmse_kwh"] for k in model_keys
-    ]
-
-    fig_model = go.Figure()
-
-    fig_model.add_trace(
-        go.Bar(
-            name="R²",
-            x=model_names,
-            y=r2_values,
-            marker_color=GREEN
+    if model_metrics is None:
+        st.info(
+            "model_metrics.json not found in repository root. "
+            "Run block3_model_training.py to generate it."
         )
-    )
+    else:
 
-    fig_model.add_trace(
-        go.Bar(
-            name="MAE (kWh)",
-            x=model_names,
-            y=mae_values,
-            marker_color=GREEN2
+        # ---------------- MODEL INPUTS ----------------
+        st.markdown(
+            "<div class='fig-title'>Input features used by the selected XGBoost model</div>",
+            unsafe_allow_html=True
         )
-    )
 
-    fig_model.add_trace(
-        go.Bar(
-            name="RMSE (kWh)",
-            x=model_names,
-            y=rmse_values,
-            marker_color=GREEN3
+        st.code(
+            ", ".join(model_metrics["features_used"]),
+            language="text"
         )
-    )
 
-    style_fig(
-        fig_model,
-        height=340,
-        legend=True,
-        margin=dict(l=0, r=0, t=30, b=0)
-    )
+        # ---------------- SELECTED MODEL ----------------
+        selected_model = model_metrics.get("selected_model", "xgboost").upper()
 
-    fig_model.update_layout(
-        barmode="group",
-        bargap=0.25
-    )
+        st.markdown(
+            f"""
+            <div class='group-title' style='margin-top:18px;'>
+            Selected prediction model: <b>{selected_model}</b>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    show(fig_model)
-
-    # ---------------- METRICS TABLE ----------------
-    st.markdown(
-        "<div class='fig-title' style='margin-top:20px;'>Detailed model metrics</div>",
-        unsafe_allow_html=True
-    )
-
-    metrics_df = pd.DataFrame({
-        "Model": model_names,
-        "R²": [
-            round(model_metrics[k]["r2"], 3)
-            for k in model_keys
-        ],
-        "MAE (kWh)": [
-            round(model_metrics[k]["mae_kwh"], 2)
-            for k in model_keys
-        ],
-        "RMSE (kWh)": [
-            round(model_metrics[k]["rmse_kwh"], 2)
-            for k in model_keys
-        ]
-    })
-
-    st.dataframe(
-        metrics_df,
-        use_container_width=True,
-        hide_index=True
-    )
-
-    # ---------------- FEATURE IMPORTANCE ----------------
-    col_m1, col_m2 = st.columns(2, gap="large")
-
-    with col_m1:
-
+        # ---------------- MODEL COMPARISON ----------------
         fig_title(
-            "XGBoost feature importance",
-            "Gain-based"
+            "Model performance comparison",
+            "BDG2 held-out test set"
         )
 
-        importances = model_metrics["feature_importance"]
+        model_names = [
+            "XGBoost",
+            "Random Forest",
+            "Gradient Boosting",
+            "Linear Regression"
+        ]
 
-        # Sort from most important to least important
-        sorted_importances = dict(
-            sorted(
-                importances.items(),
-                key=lambda x: x[1],
-                reverse=True
+        model_keys = [
+            "xgboost",
+            "random_forest",
+            "gradient_boosting",
+            "baseline_linear_regression"
+        ]
+
+        r2_values = [
+            model_metrics[k]["r2"] for k in model_keys
+        ]
+
+        mae_values = [
+            model_metrics[k]["mae_kwh"] for k in model_keys
+        ]
+
+        rmse_values = [
+            model_metrics[k]["rmse_kwh"] for k in model_keys
+        ]
+
+        fig_model = go.Figure()
+
+        fig_model.add_trace(
+            go.Bar(
+                name="R²",
+                x=model_names,
+                y=r2_values,
+                marker_color=GREEN
             )
         )
 
-        fig_imp = go.Figure(
+        fig_model.add_trace(
             go.Bar(
-                x=list(sorted_importances.values()),
-                y=list(sorted_importances.keys()),
-                orientation="h",
-                marker_color=GREEN2,
-                marker_line_width=0
+                name="MAE (kWh)",
+                x=model_names,
+                y=mae_values,
+                marker_color=GREEN2
+            )
+        )
+
+        fig_model.add_trace(
+            go.Bar(
+                name="RMSE (kWh)",
+                x=model_names,
+                y=rmse_values,
+                marker_color=GREEN3
             )
         )
 
         style_fig(
-            fig_imp,
-            height=300,
-            margin=dict(l=0, r=10, t=10, b=0)
+            fig_model,
+            height=340,
+            legend=True,
+            margin=dict(l=0, r=0, t=30, b=0)
         )
 
-        fig_imp.update_layout(
-            yaxis=dict(autorange="reversed"),
-            bargap=0.35
+        fig_model.update_layout(
+            barmode="group",
+            bargap=0.25
         )
 
-        fig_imp.update_xaxes(
-            showgrid=True,
-            gridcolor=GRID
-        )
+        show(fig_model)
 
-        fig_imp.update_yaxes(
-            showgrid=False
-        )
-
-        show(fig_imp)
-
-    # ---------------- MODEL SELECTION NOTE ----------------
-    with col_m2:
-
+        # ---------------- METRICS TABLE ----------------
         st.markdown(
-            "<div class='fig-title'>Selected model rationale</div>",
+            "<div class='fig-title' style='margin-top:20px;'>Detailed model metrics</div>",
             unsafe_allow_html=True
         )
 
-        st.markdown(
-            f"""
-<div class='body' style='margin-top:12px;'>
-The final prediction model used in this dashboard is
-<b>{selected_model}</b>.
-<br><br>
-XGBoost achieved an R² of
-<b>{model_metrics["xgboost"]["r2"]:.3f}</b>
-with an MAE of
-<b>{model_metrics["xgboost"]["mae_kwh"]:.2f} kWh</b>
-and RMSE of
-<b>{model_metrics["xgboost"]["rmse_kwh"]:.2f} kWh</b>
-on the held-out BDG2 test set.
-<br><br>
-The model uses building characteristics together with
-weather and temporal features to estimate electricity demand.
-</div>
-""",
-            unsafe_allow_html=True
+        metrics_df = pd.DataFrame({
+            "Model": model_names,
+            "R²": [
+                round(model_metrics[k]["r2"], 3)
+                for k in model_keys
+            ],
+            "MAE (kWh)": [
+                round(model_metrics[k]["mae_kwh"], 2)
+                for k in model_keys
+            ],
+            "RMSE (kWh)": [
+                round(model_metrics[k]["rmse_kwh"], 2)
+                for k in model_keys
+            ]
+        })
+
+        st.dataframe(
+            metrics_df,
+            use_container_width=True,
+            hide_index=True
         )
+
+        # ---------------- FEATURE IMPORTANCE ----------------
+        col_m1, col_m2 = st.columns(2, gap="large")
+
+        with col_m1:
+
+            fig_title(
+                "XGBoost feature importance",
+                "Gain-based"
+            )
+
+            importances = model_metrics["feature_importance"]
+
+            # Sort from most important to least important
+            sorted_importances = dict(
+                sorted(
+                    importances.items(),
+                    key=lambda x: x[1],
+                    reverse=True
+                )
+            )
+
+            fig_imp = go.Figure(
+                go.Bar(
+                    x=list(sorted_importances.values()),
+                    y=list(sorted_importances.keys()),
+                    orientation="h",
+                    marker_color=GREEN2,
+                    marker_line_width=0
+                )
+            )
+
+            style_fig(
+                fig_imp,
+                height=300,
+                margin=dict(l=0, r=10, t=10, b=0)
+            )
+
+            fig_imp.update_layout(
+                yaxis=dict(autorange="reversed"),
+                bargap=0.35
+            )
+
+            fig_imp.update_xaxes(
+                showgrid=True,
+                gridcolor=GRID
+            )
+
+            fig_imp.update_yaxes(
+                showgrid=False
+            )
+
+            show(fig_imp)
+
+        # ---------------- MODEL SELECTION NOTE ----------------
+        with col_m2:
+
+            st.markdown(
+                "<div class='fig-title'>Selected model rationale</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"""
+    <div class='body' style='margin-top:12px;'>
+    The final prediction model used in this dashboard is
+    <b>{selected_model}</b>.
+    <br><br>
+    XGBoost achieved an R² of
+    <b>{model_metrics["xgboost"]["r2"]:.3f}</b>
+    with an MAE of
+    <b>{model_metrics["xgboost"]["mae_kwh"]:.2f} kWh</b>
+    and RMSE of
+    <b>{model_metrics["xgboost"]["rmse_kwh"]:.2f} kWh</b>
+    on the held-out BDG2 test set.
+    <br><br>
+    The model uses building characteristics together with
+    weather and temporal features to estimate electricity demand.
+    </div>
+    """,
+                unsafe_allow_html=True
+            )
