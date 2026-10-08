@@ -636,7 +636,7 @@ with tab_calib:
     note("CV(RMSE) is not reported: there is no measured Block 3 hourly or monthly electricity series to pair with the predictions, so it cannot be correctly calculated and is not fabricated here.")
     note("The calibrated annual total equals the audit-share anchor because the model was scaled to it. This demonstrates calibration consistency, not independent model validation. Absolute values depend on the 11.15% load-share assumption and carry roughly ±10% uncertainty from the campus audit figures.")
 
-section("Model inputs and evaluation")
+section("Audit and retrofits")
 
 metrics_path = "model_metrics.json"
 model_metrics = None
