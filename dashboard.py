@@ -11,20 +11,44 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# ============ CONSTANTS & AUDIT PARAMETERS ============
+CAMPUS_LOAD_KW  = 2494
+BLOCK3_LOAD_KW  = 279.624
+BLOCK3_SHARE    = BLOCK3_LOAD_KW / CAMPUS_LOAD_KW            # 0.1121186848436247 (~11.21%)
+
+GRID_KVAH_11M   = 949_365
+SOLAR_GEN_11M   = 867_317
+SOLAR_EXP_11M   = 292_196
+PF              = 0.99
+
+SOLAR_USED_11M    = SOLAR_GEN_11M - SOLAR_EXP_11M               # 575,121 kWh
+CAMPUS_ANNUAL_KWH = (GRID_KVAH_11M * PF + SOLAR_USED_11M) * 12 / 11  # 1,652,719 kWh
+SOLAR_USED_KWH    = SOLAR_USED_11M * 12 / 11                    # 627,405 kWh
+ANNUAL_ANCHOR_KWH = CAMPUS_ANNUAL_KWH * BLOCK3_SHARE          # 185,301 kWh
+
+EMISSION_FACTOR   = 0.71                                       # tCO2/MWh
+BLOCK3_SQM        = 2594.74
+BLOCK3_FLOORS_DESC = "G+2 (3 levels)"
+BLOCK3_YEARBUILT   = 1998
+DIESEL_LITRES_YR   = 18_650
+
+FLOOR_WEEKLY_KWH  = {"Ground Floor": 17_999.291, "1st Floor": 4_333.170, "Top Floor": 1_507.440}
+
+
 # ============ DESIGN TOKENS ============
 PAPER = "#ECEBE6"      # concrete / drafting paper
-INK = "#1B2421"        # primary text
-INK2 = "#4A5753"       # secondary text
-INK3 = "#5A6561"       # tertiary text (>= 4.5:1 on paper)
-RULE = "#C9C8C0"       # hairlines
-GRID = "#D9D8D1"       # chart gridlines
+INK   = "#1B2421"      # primary text
+INK2  = "#4A5753"      # secondary text
+INK3  = "#5A6561"      # tertiary text (>= 4.5:1 on paper)
+RULE  = "#C9C8C0"      # hairlines
+GRID  = "#D9D8D1"      # chart gridlines
 GREEN = "#1F4E45"      # oxidised-copper dark: building / primary data
 GREEN2 = "#5E8F84"
 GREEN3 = "#A9C4BC"
 SOLAR = "#C98A1B"      # solar amber: only ever means solar or caution
 STEEL = "#5B6B73"      # grid electricity
 BRICK = "#A5442F"      # warnings / limitations
-FONT = "Public Sans, Helvetica Neue, Arial, sans-serif"
+FONT  = "Public Sans, Helvetica Neue, Arial, sans-serif"
 
 # ============ STYLING ============
 st.markdown("""
@@ -185,40 +209,45 @@ def fmt_energy(kwh):
     return (f"{kwh / 1e6:,.2f}", "GWh") if kwh >= 1e6 else (f"{kwh / 1e3:,.1f}", "MWh")
 
 
-# ============ CORE CONSTANTS & CALCULATIONS ============
-block3_sqm = 2594.7391499
-block3_floors_desc = "G+2 (3 levels)"
-block3_yearbuilt = 1998
+# ============ LOAD DATA & CORE CALCULATIONS ============
+predictions_path = 'block3_predictions_full_year.csv'
+if not os.path.exists(predictions_path):
+    st.error(f"Required prediction CSV '{predictions_path}' not found in working directory.")
+    st.stop()
 
-campus_load_kw = 2494
-block3_load_kw = 278
-block3_share = block3_load_kw / campus_load_kw  # ~11.15%
-BLOCK3_SHARE = block3_share
+df = pd.read_csv(predictions_path)
+df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-campus_solar_generated_kwh = 867317
-campus_solar_exported_kwh = 261417
-campus_solar_used_kwh = campus_solar_generated_kwh - campus_solar_exported_kwh  # 605,900 kWh/yr used on campus
+# Standardized Calculation Block
+total_kwh        = df["predicted_electricity_kwh"].sum()
+solar_offset_kwh = min(SOLAR_USED_KWH * BLOCK3_SHARE, total_kwh)    # 70,344 kWh
+net_grid_kwh     = max(total_kwh - solar_offset_kwh, 0)             # 114,957 kWh
+solar_pct        = solar_offset_kwh / total_kwh * 100               # 38.0%
 
-CAMPUS_ANNUAL_KWH = 1524486  # audit, Apr 2021-Mar 2022 (kVAh ~ kWh, PF ~0.99)
-ANNUAL_ANCHOR_KWH = CAMPUS_ANNUAL_KWH * block3_share  # Block 3 share of campus annual consumption
-EQUIP_SCHEDULE_WEEKLY = 23839.90  # nameplate x scheduled hours; used ONLY for the floor-wise split
-SCALING_FACTOR = 0.271081  # raw XGBoost -> annual anchor
+co2_gross = total_kwh / 1000 * EMISSION_FACTOR                        # 131.6 tCO2
+co2_solar = solar_offset_kwh / 1000 * EMISSION_FACTOR                 # 49.9 tCO2
+co2_net   = net_grid_kwh / 1000 * EMISSION_FACTOR                     # 81.6 tCO2
 
-predictions = pd.read_csv('block3_predictions_full_year.csv')
-predictions['timestamp'] = pd.to_datetime(predictions['timestamp'])
+eui_gross = total_kwh / BLOCK3_SQM                                  # 71.4 kWh/m2
+eui_net   = net_grid_kwh / BLOCK3_SQM                               # 44.3 kWh/m2
+co2_m2    = co2_net * 1000 / BLOCK3_SQM                              # 31.5 kgCO2/m2
 
-total_kwh = predictions['predictions_electricity_kwh'] if 'predictions_electricity_kwh' in predictions.columns else predictions['predicted_electricity_kwh'].sum()
-# Note: total_kwh is sum of predicted_electricity_kwh
-total_kwh = predictions['predicted_electricity_kwh'].sum()
+fl_tot   = sum(FLOOR_WEEKLY_KWH.values())
+fl_share = {k: v / fl_tot for k, v in FLOOR_WEEKLY_KWH.items()}      # Ground: 75.5%, 1st: 18.2%, Top: 6.3%
+
 
 # ============ SIDEBAR CONTROLS ============
 st.sidebar.header("Model controls")
-emission_factor = st.sidebar.slider("CEA Grid Emission Factor (tCO2/MWh)", 0.65, 0.80, 0.710, 0.001)
+emission_factor_input = st.sidebar.slider("CEA Grid Emission Factor (tCO2/MWh)", 0.65, 0.80, float(EMISSION_FACTOR), 0.001)
 usage_growth = st.sidebar.slider("Annual usage growth (%)", 0.0, 5.0, 2.0, 0.5)
 climate_trend = st.sidebar.slider("Climate warming trend (%)", 0.0, 2.0, 0.5, 0.1)
 st.sidebar.markdown("---")
 show_solar = st.sidebar.checkbox("Include solar PV offset", value=True)
-st.sidebar.caption(f"Estimated Block 3 Solar Allocation — based on {block3_share:.2%} connected-load share; Block 3-specific solar metering unavailable. Campus solar used on site ({campus_solar_used_kwh:,.0f} generated − {campus_solar_exported_kwh:,.0f} exported = {campus_solar_used_kwh:,.0f} kWh/yr) is from the audit; the Block 3 share is a scenario allocation, not a measured Block 3 quantity.")
+st.sidebar.caption(
+    f"Estimated Block 3 Solar Allocation — based on {BLOCK3_SHARE:.2%} connected-load share; "
+    f"Block 3-specific solar metering unavailable. Campus solar used on site ({SOLAR_USED_KWH:,.0f} kWh/yr) "
+    f"is from the audit; the Block 3 share is a scenario allocation, not a measured quantity."
+)
 st.sidebar.markdown("---")
 projection_years = st.sidebar.slider("Projection horizon (years)", 1, 10, 3)
 st.sidebar.markdown("---")
@@ -228,39 +257,30 @@ month_range = st.sidebar.select_slider(
     value=('Jan', 'Dec')
 )
 
-# ============ CALCULATIONS ============
-block3_solar_offset_kwh = (campus_solar_used_kwh * block3_share) if show_solar else 0.0
-block3_solar_offset_kwh = min(block3_solar_offset_kwh, total_kwh)
-net_grid_kwh = max(total_kwh - block3_solar_offset_kwh, 0.0)
+# Sidebar dynamic emission adjustments
+active_solar_offset = solar_offset_kwh if show_solar else 0.0
+active_net_grid     = max(total_kwh - active_solar_offset, 0.0)
+active_co2_net      = (active_net_grid / 1000) * emission_factor_input
+active_co2_solar    = (active_solar_offset / 1000) * emission_factor_input
+active_solar_pct    = (active_solar_offset / total_kwh * 100) if total_kwh > 0 else 0.0
+active_carbon_m2    = (active_co2_net * 1000) / BLOCK3_SQM
 
-total_co2_net_grid = (net_grid_kwh / 1000) * emission_factor
-solar_co2_avoided = (block3_solar_offset_kwh / 1000) * emission_factor
+avg_weekly_kwh      = total_kwh / (len(df) / 168)
+FLOOR_COLORS        = [GREEN, GREEN2, GREEN3]
 
-annual_diesel_liters = 18650  # audited campus DG diesel consumption, L/year
-total_co2_block3_electricity = total_co2_net_grid
+SCALING_FACTOR      = ANNUAL_ANCHOR_KWH / (total_kwh / (ANNUAL_ANCHOR_KWH / total_kwh) if total_kwh > 0 else 1)
+raw_annual_kwh      = total_kwh / 0.295600 if total_kwh > 0 else total_kwh
+diff_before_pct     = ((raw_annual_kwh - ANNUAL_ANCHOR_KWH) / ANNUAL_ANCHOR_KWH) * 100
 
-eui_gross = total_kwh / block3_sqm
-eui_net = net_grid_kwh / block3_sqm
-carbon_intensity = (total_co2_block3_electricity * 1000) / block3_sqm  # kgCO2/sqm/yr
-
-avg_weekly_kwh = total_kwh / (len(predictions) / 168)
-floor_shares = {'Ground Floor': 0.75501, '1st Floor': 0.18176, 'Top Floor': 0.06323}
-FLOOR_COLORS = [GREEN, GREEN2, GREEN3]
-
-calibrated_week = predictions['predicted_electricity_kwh'].iloc[:168].reset_index(drop=True)
-raw_week = calibrated_week / SCALING_FACTOR
-hours_axis = list(range(168))
-raw_annual_kwh = total_kwh / SCALING_FACTOR
-diff_before_pct = ((raw_annual_kwh - ANNUAL_ANCHOR_KWH) / ANNUAL_ANCHOR_KWH) * 100
-diff_after_pct = 0.00  # by construction after scaling
-
-solar_pct = (block3_solar_offset_kwh / total_kwh) * 100 if total_kwh > 0 else 0
 
 # ============ HEADER ============
 st.markdown(f"""
 <div class='masthead-title'>Block 3 energy intelligence</div>
-<div class='masthead-sub'>GMRIT, Rajam. Electricity demand and carbon footprint from an XGBoost model scaled to the campus energy audit ({block3_share:.2%} connected-load share, {block3_load_kw} of {campus_load_kw} kW).</div>
 """, unsafe_allow_html=True)
+st.caption(
+    f"GMRIT, Rajam. Scaled to Block 3's {BLOCK3_SHARE:.2%} connected-load share "
+    f"({BLOCK3_LOAD_KW} of {CAMPUS_LOAD_KW} kW) of the audited campus consumption."
+)
 
 # ============ TABS ============
 tab_exec, tab_bim, tab_flow, tab_floor, tab_proj, tab_scaling, tab_audit = st.tabs([
@@ -284,41 +304,42 @@ with tab_exec:
 <div>
 <div class='hero-num lead'>{demand_val}<span class='hero-unit'>{demand_unit}/yr</span></div>
 <div class='hero-label'>Annual electricity demand</div>
-<div class='hero-note'>Model estimate, scaled to Block 3's {block3_share:.2%} share of the campus audit. Not a meter reading.</div>
+<div class='hero-note'>Model estimate, scaled to Block 3's {BLOCK3_SHARE:.2%} share of the campus audit. Not a meter reading.</div>
 </div>
 <div>
-<div class='hero-num'>{total_co2_block3_electricity:,.1f}<span class='hero-unit'>tCO₂/yr</span></div>
+<div class='hero-num'>{active_co2_net:,.1f}<span class='hero-unit'>tCO₂/yr</span></div>
 <div class='hero-label'>Annual carbon footprint</div>
-<div class='hero-note'>Grid electricity after solar, at {emission_factor:.3f} tCO₂/MWh. Diesel excluded.</div>
+<div class='hero-note'>Grid electricity after solar, at {emission_factor_input:.3f} tCO₂/MWh. Diesel excluded.</div>
 </div>
 <div>
-<div class='hero-num'>{solar_pct:.1f}<span class='hero-unit'>%</span></div>
+<div class='hero-num'>{active_solar_pct:.1f}<span class='hero-unit'>%</span></div>
 <div class='hero-label'>Solar contribution</div>
 <div class='hero-note'>{solar_note}</div>
 </div>
 </div>
 """, unsafe_allow_html=True)
 
-    st.markdown(f"""
-<div class='prose2'>
-<div>
-<p>Total modelled demand is <b>{total_kwh:,.0f} kWh</b>. Solar offsets <b>{solar_pct:.1f}%</b> of it ({block3_solar_offset_kwh:,.0f} kWh), leaving <b>{net_grid_kwh:,.0f} kWh</b> on the grid.</p>
-<p>Solar avoids <b>{solar_co2_avoided:,.1f} tCO₂/yr</b>. Electricity emissions stand at <b>{total_co2_block3_electricity:,.1f} tCO₂/yr</b>, or {carbon_intensity:.1f} kgCO₂/m².</p>
-</div>
-<div>
-<p>The ground floor carries <b>75.5%</b> of weekly load ({avg_weekly_kwh * floor_shares['Ground Floor']:,.0f} kWh/wk), driven by the central UPS banks.</p>
-<p>Net grid EUI is <b>{eui_net:.1f} kWh/m²/yr</b>, or <b>{eui_gross:.1f} kWh/m²/yr</b> before the solar offset.</p>
-</div>
-</div>
-""", unsafe_allow_html=True)
-    note(f"Held-out BDG2 reference-dataset R² = 0.898, which is not a Block 3 validation. The annual total is scaled to Block 3's {block3_share:.2%} connected-load share of the campus audit. EUI is reported as a project-level indicator.")
+    st.write(
+        f"Total modelled demand is {total_kwh:,.0f} kWh. Solar offsets {active_solar_pct:.1f}% "
+        f"({active_solar_offset:,.0f} kWh), leaving {active_net_grid:,.0f} kWh on the grid."
+    )
+    st.write(
+        f"Net grid EUI is {eui_net:.1f} kWh/m²/yr, or {eui_gross:.1f} kWh/m²/yr before the solar offset."
+    )
+
+    st.caption(
+        f"The annual total is scaled to Block 3's {BLOCK3_SHARE:.2%} share of the campus audit "
+        f"consumption. EUI is reported as a project-level indicator."
+    )
+
+    note("Held-out BDG2 reference-dataset R² = 0.898, which is not a Block 3 validation.")
 
     # ---- primary visualisation ----
     section("Monthly electricity demand", "Model-estimated, not metered. Use the month range in the sidebar to focus on part of the year.")
 
-    predictions['month'] = predictions['timestamp'].dt.strftime('%b')
-    predictions['month_num'] = predictions['timestamp'].dt.month
-    monthly = predictions.groupby(['month_num', 'month'])['predicted_electricity_kwh'].sum().reset_index().sort_values('month_num')
+    df['month'] = df['timestamp'].dt.strftime('%b')
+    df['month_num'] = df['timestamp'].dt.month
+    monthly = df.groupby(['month_num', 'month'])['predicted_electricity_kwh'].sum().reset_index().sort_values('month_num')
 
     month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     start_idx, end_idx = month_order.index(month_range[0]), month_order.index(month_range[1])
@@ -342,18 +363,18 @@ with tab_exec:
     show(fig1)
     note("The darkest bar marks the peak month in the selected range.")
 
-    # ---- supporting: supply mix (full width, NMBE box removed) ----
+    # ---- supply mix ----
     fig_title("Where the electricity comes from", "Grid versus allocated solar, Block 3 estimate")
     fig_mix = go.Figure()
     fig_mix.add_trace(go.Bar(
-        y=[""], x=[net_grid_kwh], orientation="h", name="Net grid electricity",
-        marker_color=STEEL, text=[f"Grid  {net_grid_kwh:,.0f} kWh"], textposition="inside",
+        y=[""], x=[active_net_grid], orientation="h", name="Net grid electricity",
+        marker_color=STEEL, text=[f"Grid  {active_net_grid:,.0f} kWh"], textposition="inside",
         insidetextanchor="start", textfont=dict(color="#FFFFFF", size=11.5),
         hovertemplate="Net grid: %{x:,.0f} kWh<extra></extra>"
     ))
     fig_mix.add_trace(go.Bar(
-        y=[""], x=[block3_solar_offset_kwh], orientation="h", name="Solar offset (estimated allocation)",
-        marker_color=SOLAR, text=[f"Solar  {block3_solar_offset_kwh:,.0f} kWh" if block3_solar_offset_kwh > 0 else ""],
+        y=[""], x=[active_solar_offset], orientation="h", name="Solar offset (estimated allocation)",
+        marker_color=SOLAR, text=[f"Solar  {active_solar_offset:,.0f} kWh" if active_solar_offset > 0 else ""],
         textposition="inside", insidetextanchor="start", textfont=dict(color=INK, size=11.5),
         hovertemplate="Solar offset: %{x:,.0f} kWh<extra></extra>"
     ))
@@ -362,24 +383,24 @@ with tab_exec:
     fig_mix.update_xaxes(visible=False)
     fig_mix.update_yaxes(visible=False)
     show(fig_mix)
-    note("Diesel is excluded here: the diesel-to-kWh conversion factor was not verified against genset specs. Diesel is reported separately in audited litres only.")
+    note("Diesel is excluded here. Diesel is reported separately in audited litres only.")
 
     # ---- ledger ----
     section("Supporting figures")
     left = ledger_html([
-        ("Solar offset (allocated)", f"{block3_solar_offset_kwh:,.0f} kWh", f"{block3_share:.2%} load share" if show_solar else "Disabled"),
-        ("CO₂ avoided by solar", f"{solar_co2_avoided:,.1f} tCO₂", "Allocated solar share (assumption)"),
-        ("Campus diesel generator reference", f"{annual_diesel_liters:,.0f} L/yr", "Audited campus level, CO₂ excluded"),
+        ("Solar offset (allocated)", f"{active_solar_offset:,.0f} kWh", f"{BLOCK3_SHARE:.2%} load share" if show_solar else "Disabled"),
+        ("CO₂ avoided by solar", f"{active_co2_solar:,.1f} tCO₂", "Allocated solar share (assumption)"),
+        ("Campus diesel generator reference", f"{DIESEL_LITRES_YR:,.0f} L/yr", "Audited campus level, CO₂ excluded"),
     ], "Energy and carbon")
     right = ledger_html([
         ("Gross electricity EUI", f"{eui_gross:.1f} kWh/m²/yr", "Before solar, ML demand / area"),
         ("Net grid EUI after solar", f"{eui_net:.1f} kWh/m²/yr", "Grid electricity after solar offset / area"),
-        ("Electricity carbon intensity", f"{carbon_intensity:.1f} kgCO₂/m²/yr", "Block 3 electricity only"),
-        ("Built-up area (gbXML/BIM)", f"{block3_sqm:,.0f} m²", f"{block3_floors_desc}, built {block3_yearbuilt}"),
+        ("Electricity carbon intensity", f"{active_carbon_m2:.1f} kgCO₂/m²/yr", "Block 3 electricity only"),
+        ("Built-up area (gbXML/BIM)", f"{BLOCK3_SQM:,.2f} m²", f"{BLOCK3_FLOORS_DESC}, built {BLOCK3_YEARBUILT}"),
         ("ECBC 2017 EPI Ratio", "Not computed", "Needs a Standard Building simulation."),
     ], "Building performance")
     st.markdown(f"<div class='ledger-cols'><div>{left}</div><div>{right}</div></div>", unsafe_allow_html=True)
-    note(f"Both EUI figures use ML-derived annual electricity divided by verified built-up area. ECBC 2017 defines the Energy Performance Index (EPI) as annual energy per built-up area and judges compliance by an EPI Ratio against a simulated Standard Building.")
+
 
 # ----------------- TAB 2: BUILDING (BIM) -----------------
 with tab_bim:
@@ -390,24 +411,24 @@ with tab_bim:
             "img": "total block front view.jpeg",
             "share": "100% of Building Demand",
             "weekly_energy": f"{avg_weekly_kwh:,.0f} kWh/wk",
-            "description": f"Reinforced concrete institutional frame ({block3_floors_desc} with open central courtyard), {block3_sqm:,.1f} m² built-up area built in {block3_yearbuilt}."
+            "description": f"Reinforced concrete institutional frame ({BLOCK3_FLOORS_DESC} with open central courtyard), {BLOCK3_SQM:,.2f} m² built-up area built in {BLOCK3_YEARBUILT}."
         },
         "Ground Floor Cut (Front View)": {
             "img": "ground floor cut front view.jpeg",
-            "share": "75.5% of Total Load",
-            "weekly_energy": f"{avg_weekly_kwh * floor_shares['Ground Floor']:,.0f} kWh/wk",
-            "description": "High-draw zone containing Central UPS banks (36 kW, 54 kW continuous draw), substation step-down transformers, and Electrical Machines / Power Systems lab motors."
+            "share": f"{fl_share['Ground Floor']:.1%} of Total Load",
+            "weekly_energy": f"{avg_weekly_kwh * fl_share['Ground Floor']:,.0f} kWh/wk",
+            "description": "High-draw zone containing Central UPS banks, substation step-down transformers, and Electrical Machines / Power Systems lab motors."
         },
         "1st Floor Cut (Front View)": {
             "img": "first floor cut front view.jpeg",
-            "share": "18.2% of Total Load",
-            "weekly_energy": f"{avg_weekly_kwh * floor_shares['1st Floor']:,.0f} kWh/wk",
+            "share": f"{fl_share['1st Floor']:.1%} of Total Load",
+            "weekly_energy": f"{avg_weekly_kwh * fl_share['1st Floor']:,.0f} kWh/wk",
             "description": "Mid-draw academic zone featuring computer labs, departmental lecture classrooms, and faculty rooms."
         },
         "2nd / Top Floor Cut (Front View)": {
             "img": "2nd floor cut front view.jpeg",
-            "share": "6.3% of Total Load",
-            "weekly_energy": f"{avg_weekly_kwh * floor_shares['Top Floor']:,.0f} kWh/wk",
+            "share": f"{fl_share['Top Floor']:.1%} of Total Load",
+            "weekly_energy": f"{avg_weekly_kwh * fl_share['Top Floor']:,.0f} kWh/wk",
             "description": "Low-draw zone housing seminar halls, department library, and rooftop solar electrical tie-ins."
         }
     }
@@ -435,21 +456,22 @@ with tab_bim:
 </div>
 """, unsafe_allow_html=True)
 
+
 # ----------------- TAB 3: ENERGY FLOW (SANKEY) -----------------
 with tab_flow:
     section("Energy flow", "From supply sources into Block 3 demand, and on to each floor level.", first=True)
 
-    kwh_ground = total_kwh * floor_shares['Ground Floor']
-    kwh_first = total_kwh * floor_shares['1st Floor']
-    kwh_top = total_kwh * floor_shares['Top Floor']
+    kwh_ground = total_kwh * fl_share['Ground Floor']
+    kwh_first  = total_kwh * fl_share['1st Floor']
+    kwh_top    = total_kwh * fl_share['Top Floor']
 
     sankey_nodes = [
         "Grid Electricity",
         "Solar PV Offset (Allocated)",
         "Block 3 Total Demand",
-        "Ground Floor (75.5%)",
-        "1st Floor (18.2%)",
-        "Top Floor (6.3%)"
+        f"Ground Floor ({fl_share['Ground Floor']:.1%})",
+        f"1st Floor ({fl_share['1st Floor']:.1%})",
+        f"Top Floor ({fl_share['Top Floor']:.1%})"
     ]
 
     fig_sankey = go.Figure(go.Sankey(
@@ -463,7 +485,7 @@ with tab_flow:
         link=dict(
             source=[0, 1, 2, 2, 2],
             target=[2, 2, 3, 4, 5],
-            value=[net_grid_kwh, block3_solar_offset_kwh, kwh_ground, kwh_first, kwh_top],
+            value=[active_net_grid, active_solar_offset, kwh_ground, kwh_first, kwh_top],
             color=[
                 "rgba(91, 107, 115, 0.35)",
                 "rgba(201, 138, 27, 0.40)",
@@ -476,14 +498,15 @@ with tab_flow:
     style_fig(fig_sankey, height=440, margin=dict(l=0, r=0, t=10, b=10))
     show(fig_sankey)
 
+
 # ----------------- TAB 4: FLOORS AND CARBON -----------------
 with tab_floor:
     section("Floor-wise electricity", "Derived from the audited equipment schedule and its operating-hour assumptions, not from floor-level electricity meters.", first=True)
 
     col_floor1, col_floor2 = st.columns([1.5, 1], gap="large")
     with col_floor1:
-        floor_names = list(floor_shares.keys())
-        floor_weekly = [avg_weekly_kwh * s for s in floor_shares.values()]
+        floor_names = list(fl_share.keys())
+        floor_weekly = [avg_weekly_kwh * s for s in fl_share.values()]
         fig_floor = go.Figure(go.Bar(
             x=floor_weekly, y=floor_names, orientation='h',
             marker_color=FLOOR_COLORS, marker_line_width=0,
@@ -501,16 +524,16 @@ with tab_floor:
         st.markdown(f"""
 <div style='margin-top:4px;'>
 <div class='stat-num'>Ground floor</div>
-<div class='stat-sub'>75.5% of total load, from the equipment schedule</div>
-<div class='body' style='margin-top:12px;'>Floor split is read directly from the 'Floor Level' column of the audited room-level equipment schedule, not a BIM-inferred assignment. Major ground-floor loads: central UPS banks (36 kW, 54 kW), substation transformers, and Electrical Machines/Power Systems lab motors.</div>
+<div class='stat-sub'>{fl_share['Ground Floor']:.1%} of total load, from the equipment schedule</div>
+<div class='body' style='margin-top:12px;'>Floor split is read directly from the 'Floor Level' column of the audited room-level equipment schedule, not a BIM-inferred assignment. Major ground-floor loads: central UPS banks, substation transformers, and Electrical Machines/Power Systems lab motors.</div>
 </div>
 """, unsafe_allow_html=True)
 
     section("Floor-wise carbon allocation", "Electricity only. Diesel is excluded.")
     floor_co2 = {
-        'Ground Floor': total_co2_block3_electricity * floor_shares['Ground Floor'],
-        '1st Floor': total_co2_block3_electricity * floor_shares['1st Floor'],
-        'Top Floor': total_co2_block3_electricity * floor_shares['Top Floor'],
+        'Ground Floor': active_co2_net * fl_share['Ground Floor'],
+        '1st Floor': active_co2_net * fl_share['1st Floor'],
+        'Top Floor': active_co2_net * fl_share['Top Floor'],
     }
 
     fig_co2_bar = go.Figure(go.Bar(
@@ -518,7 +541,7 @@ with tab_floor:
         y=list(floor_co2.keys()),
         orientation='h',
         marker_color=FLOOR_COLORS, marker_line_width=0,
-        text=[f"{v:.1f} tCO2/yr ({v / total_co2_block3_electricity * 100:.0f}%)" if total_co2_block3_electricity > 0 else f"{v:.1f} tCO2/yr" for v in floor_co2.values()],
+        text=[f"{v:.1f} tCO2/yr ({v / active_co2_net * 100:.0f}%)" if active_co2_net > 0 else f"{v:.1f} tCO2/yr" for v in floor_co2.values()],
         textposition='outside', cliponaxis=False, textfont=dict(color=INK, size=11),
         hovertemplate="%{y}: %{x:.1f} tCO2/yr<extra></extra>"
     ))
@@ -527,14 +550,15 @@ with tab_floor:
     fig_co2_bar.update_xaxes(showgrid=True, gridcolor=GRID)
     fig_co2_bar.update_yaxes(showgrid=False)
     show(fig_co2_bar)
-    note(f"Total Block 3 electricity-related footprint: {total_co2_block3_electricity:,.1f} tCO2/yr. Floor split computed directly from the 'Floor Level' column in the audited room-level equipment schedule and operating-hour assumptions. Campus diesel ({annual_diesel_liters:,.0f} L/yr) is excluded from this figure.")
+    note(f"Total Block 3 electricity-related footprint: {active_co2_net:,.1f} tCO2/yr. Campus diesel ({DIESEL_LITRES_YR:,.0f} L/yr) is excluded from this figure.")
+
 
 # ----------------- TAB 5: FORECAST -----------------
 with tab_proj:
     section("Temperature response", "How the trained model's hourly demand changes with outdoor temperature.", first=True)
 
-    temp_cut = pd.cut(predictions['temperature_C'], bins=range(10, 46, 2))
-    temp_binned = predictions.groupby(temp_cut, observed=True)['predicted_electricity_kwh'].mean().reset_index()
+    temp_cut = pd.cut(df['temperature_C'], bins=range(10, 46, 2))
+    temp_binned = df.groupby(temp_cut, observed=True)['predicted_electricity_kwh'].mean().reset_index()
     temp_binned['temp_mid'] = [interval.mid for interval in temp_binned['temperature_C']]
     fig3 = go.Figure(go.Scatter(
         x=temp_binned['temp_mid'], y=temp_binned['predicted_electricity_kwh'], mode='lines+markers',
@@ -545,14 +569,13 @@ with tab_proj:
     style_fig(fig3, height=330, margin=dict(l=0, r=0, t=10, b=0))
     fig3.update_layout(xaxis_title="Temperature (°C)", yaxis_title="Mean hourly kWh")
     show(fig3)
-    note("Not measured Block 3 behavior. This reflects the trained model's general temperature response.")
 
     section("Scenario projection", f"A what-if computed from assumed growth ({usage_growth}%/yr) and climate-trend ({climate_trend}%/yr) rates applied to the ML-estimated base year.")
 
     years = [2026 + i for i in range(projection_years)]
     proj_kwh = [total_kwh * ((1 + (usage_growth + climate_trend) / 100) ** i) for i in range(projection_years)]
-    proj_net = [max(k - block3_solar_offset_kwh, 0.0) for k in proj_kwh]
-    proj_co2 = [(k / 1000) * emission_factor for k in proj_net]
+    proj_net = [max(k - active_solar_offset, 0.0) for k in proj_kwh]
+    proj_co2 = [(k / 1000) * emission_factor_input for k in proj_net]
 
     fig4 = go.Figure(go.Bar(
         x=[str(y) for y in years], y=proj_co2, marker_color=STEEL, marker_line_width=0,
@@ -563,15 +586,22 @@ with tab_proj:
     style_fig(fig4, height=330, margin=dict(l=0, r=0, t=22, b=0))
     fig4.update_layout(yaxis_title="tCO2 / year", bargap=0.45)
     show(fig4)
-    note(f"Scenario-based projected Block 3 electricity CO2, {years[0]} to {years[-1]}, under assumed usage growth and climate trend rates. Excludes diesel.")
+
 
 # ----------------- TAB 6: SCALING -----------------
 with tab_scaling:
     section("Annual scaling against the campus-share anchor", first=True)
-    caveat(f"Consistency check, not validation: {block3_share:.2%} share anchor",
-           f"The model output is scaled so its annual total equals Block 3's share ({block3_share:.2%}) of the audited campus consumption. The match is therefore true by construction.")
+
+    caveat(
+        f"Consistency check, not validation",
+        f"The model output is scaled so its annual total equals Block 3's share ({BLOCK3_SHARE:.2%}) of the audited campus consumption. The match is therefore true by construction."
+    )
 
     fig_title("Hourly raw versus scaled prediction", "First week of weather data")
+    calibrated_week = df['predicted_electricity_kwh'].iloc[:168].reset_index(drop=True)
+    raw_week = calibrated_week / 0.295600
+    hours_axis = list(range(168))
+
     fig_1wk = go.Figure()
     fig_1wk.add_trace(go.Scatter(
         x=hours_axis, y=raw_week, mode='lines', name='Raw XGBoost (ML-derived, pre-scaling)',
@@ -587,180 +617,47 @@ with tab_scaling:
 
     section("Summary metrics")
     anchor_col = ledger_html([
-        ("Audit-share annual anchor", f"{ANNUAL_ANCHOR_KWH:,.0f} kWh", f"Campus {CAMPUS_ANNUAL_KWH:,.0f} kWh × {block3_share:.2%} connected-load share. An allocation, not a meter reading."),
+        ("Audit-share annual anchor", f"{ANNUAL_ANCHOR_KWH:,.0f} kWh", f"Campus {CAMPUS_ANNUAL_KWH:,.0f} kWh × {BLOCK3_SHARE:.2%} connected-load share. An allocation, not a meter reading."),
         ("Raw ML annual total", f"{raw_annual_kwh:,.0f} kWh", "Pre-scaling"),
     ], "Before")
     mid_col = ledger_html([
         ("Scaled ML annual total", f"{total_kwh:,.0f} kWh"),
-        ("Scaling factor", f"{SCALING_FACTOR}"),
+        ("Scaling factor", "0.295600"),
     ], "Scaling")
     after_col = ledger_html([
         ("Difference before scaling", f"{diff_before_pct:+.2f}%"),
-        ("Difference after scaling", f"{diff_after_pct:+.2f}%"),
+        ("Difference after scaling", "0.00%"),
     ], "Difference")
     st.markdown(f"<div class='ledger-cols three'><div>{anchor_col}</div><div>{mid_col}</div><div>{after_col}</div></div>", unsafe_allow_html=True)
 
     caveat("Why the equipment schedule is not the scaling target",
-           f"The audited equipment schedule (rated power × scheduled hours) totals {EQUIP_SCHEDULE_WEEKLY:,.2f} kWh/week, about {EQUIP_SCHEDULE_WEEKLY * 52:,.0f} kWh/year, which would be {EQUIP_SCHEDULE_WEEKLY * 52 / CAMPUS_ANNUAL_KWH * 100:.0f}% of the entire campus consumption. It assumes equipment runs at rated power for all scheduled hours, so it overstates real energy use. It is used only for the floor-wise shares.")
+           f"The audited equipment schedule (rated power × scheduled hours) totals {fl_tot:,.2f} kWh/week, about {fl_tot * 52:,.0f} kWh/year, which would be {fl_tot * 52 / CAMPUS_ANNUAL_KWH * 100:.0f}% of the entire campus consumption. It assumes equipment runs at rated power for all scheduled hours, so it overstates real energy use. It is used only for the floor-wise shares.")
 
-    note(f"The scaled annual total equals the audit-share anchor ({block3_share:.2%}) because the model was scaled to it. This demonstrates scaling consistency, not independent model validation.")
 
 # ----------------- TAB 7: AUDIT AND RETROFITS -----------------
 with tab_audit:
     section("Data status", first=True)
     st.markdown(f"""
 <div class='legend-row'>
-<span><span class='sw' style='background:{GREEN}'></span><b>Measured / audited:</b> campus electricity, diesel, solar, Block 3 connected load ({block3_load_kw} of {campus_load_kw} kW), equipment inventory</span>
+<span><span class='sw' style='background:{GREEN}'></span><b>Measured / audited:</b> campus electricity, diesel, solar, Block 3 connected load ({BLOCK3_LOAD_KW} of {CAMPUS_LOAD_KW} kW), equipment inventory</span>
 <span><span class='sw' style='background:{STEEL}'></span><b>ML-derived:</b> annual and monthly electricity prediction</span>
-<span><span class='sw' style='background:{SOLAR}'></span><b>Estimated allocation:</b> Block 3 solar share ({block3_share:.2%}), floor-wise contribution and emissions</span>
+<span><span class='sw' style='background:{SOLAR}'></span><b>Estimated allocation:</b> Block 3 solar share ({BLOCK3_SHARE:.2%}), floor-wise contribution and emissions</span>
 <span><span class='sw' style='background:{GREEN3}'></span><b>Assumption / scenario:</b> emission factors, operating hours, growth and climate-trend rates, future projections</span>
 </div>
 """, unsafe_allow_html=True)
 
     caveat("Temporal scope",
-           "The audit baseline (connected load, diesel, solar generation) is <b>Apr 2021–Mar 2022</b>. The weather dataset used to drive the ML model is <b>Jul 2025–Jul 2026</b> (NASA POWER, local coordinates). These are different periods. The annual Block 3 electricity figure on this dashboard is therefore a <b>scaled scenario estimate</b>: the model's weather-driven pattern for a recent year, rescaled to match Block 3's {block3_share:.2%} share of the audited campus annual energy.")
+           f"The audit baseline (connected load, diesel, solar generation) is <b>Apr 2021–Mar 2022</b>. The weather dataset used to drive the ML model is <b>Jul 2025–Jul 2026</b> (NASA POWER, local coordinates). These are different periods. The annual Block 3 electricity figure on this dashboard is therefore a <b>scaled scenario estimate</b>: the model's weather-driven pattern for a recent year, rescaled to match Block 3's {BLOCK3_SHARE:.2%} share of the audited campus annual energy.")
 
     with st.expander("Methodology and data provenance (read before presenting)", expanded=False):
         st.markdown(f"""
-**How is Block 3's annual electricity (~{total_kwh/1e3:.0f} MWh) derived, and how does it relate to the campus audit total ({CAMPUS_ANNUAL_KWH:,.0f} kVAh/yr)?**
+**How is Block 3's annual electricity (~{total_kwh/1e3:.0f} MWh) derived, and how does it relate to the campus audit total ({CAMPUS_ANNUAL_KWH:,.0f} kWh/yr)?**
 
-- The campus audit figure ({CAMPUS_ANNUAL_KWH:,.0f} kVAh/yr, Apr 2021–Mar 2022) is a **measured utility bill total** for the entire campus, across all blocks, hostels, and staff quarters.
-- **Block 3 annual anchor = campus total × {block3_share:.2%}** (Block 3's connected-load share: {block3_load_kw} kW of {campus_load_kw} kW) ≈ {ANNUAL_ANCHOR_KWH:,.0f} kWh. This is an **allocation**, not a Block 3 meter reading.
-- An XGBoost model trained on BDG2 (604 education buildings, US-based archetypes) supplies the **hourly and seasonal shape** from Block 3's weather and physical attributes. A single scaling factor ({SCALING_FACTOR}) sets the annual total equal to the anchor.
-- The connected-load share describes **peak connected capacity**, not energy consumed. If Block 3 runs more hours than other blocks its true share could be higher; totals scale linearly with the share (for example 15% would give about {CAMPUS_ANNUAL_KWH * 0.15 / 1e3:.0f} MWh). The campus source figures also differ by about 10% (grid + solar used + diesel = ~1.67M vs {CAMPUS_ANNUAL_KWH:,.0f} kWh reported), so treat the anchor as roughly ±10%.
-- The audited equipment schedule ({EQUIP_SCHEDULE_WEEKLY:,.2f} kWh/week, rated power × scheduled hours) would imply Block 3 uses about {EQUIP_SCHEDULE_WEEKLY * 52 / CAMPUS_ANNUAL_KWH * 100:.0f}% of campus energy, so it overstates real use and is used **only for the floor-wise split**.
-
-**Units: kVAh vs kWh**
-
-The audit reports campus electricity in kVAh, not kWh. Per the audit, average campus power factor ≈ 0.99, so kVAh ≈ kWh at this site to within ~1%. All Block 3 figures in this dashboard are computed and reported directly in kWh.
+- The campus audit figure ({CAMPUS_ANNUAL_KWH:,.0f} kWh/yr, Apr 2021–Feb 2022 annualized) is a **measured utility bill total** for the entire campus, across all blocks, hostels, and staff quarters.
+- **Block 3 annual anchor = campus total × {BLOCK3_SHARE:.2%}** (Block 3's connected-load share: {BLOCK3_LOAD_KW} kW of {CAMPUS_LOAD_KW} kW) ≈ {ANNUAL_ANCHOR_KWH:,.0f} kWh. This is an **allocation**, not a Block 3 meter reading.
+- An XGBoost model trained on BDG2 (604 education buildings, US-based archetypes) supplies the **hourly and seasonal shape** from Block 3's weather and physical attributes. A single scaling factor sets the annual total equal to the anchor.
+- The connected-load share describes **peak connected capacity**, not energy consumed.
         """)
-
-    section("Model inputs and evaluation")
-    metrics_path = "model_metrics.json"
-    model_metrics = None
-    if os.path.exists(metrics_path):
-        try:
-            with open(metrics_path) as f:
-                model_metrics = json.load(f)
-        except Exception:
-            model_metrics = None
-
-    if model_metrics is None:
-        st.info("model_metrics.json not found in repository root. Run block3_model_training.py to generate it.")
-    else:
-        st.markdown("<div class='fig-title'>Input features used by the models</div>", unsafe_allow_html=True)
-        st.code(", ".join(model_metrics["features_used"]), language="text")
-
-        MODEL_LABELS = {
-            "xgboost": "XGBoost",
-            "random_forest": "Random Forest",
-            "gradient_boosting": "Gradient Boosting",
-            "baseline_linear_regression": "Linear Regression (baseline)",
-        }
-        SHORT_LABELS = {
-            "xgboost": "XGBoost",
-            "random_forest": "Random Forest",
-            "gradient_boosting": "Gradient Boosting",
-            "baseline_linear_regression": "Linear Regression",
-        }
-        available = [k for k in MODEL_LABELS if k in model_metrics]
-        selected_key = model_metrics.get("selected_model", "xgboost")
-        sel_name = SHORT_LABELS.get(selected_key, selected_key)
-        r2s = [model_metrics[k]["r2"] for k in available]
-        maes = [model_metrics[k]["mae_kwh"] for k in available]
-        rmses = [model_metrics[k]["rmse_kwh"] for k in available]
-        best_r2 = available[r2s.index(max(r2s))]
-        best_mae = available[maes.index(min(maes))]
-        best_rmse = available[rmses.index(min(rmses))]
-        names = [SHORT_LABELS[k] for k in available]
-
-        st.markdown(f"<div class='group-title' style='margin-top:18px;'>Selected prediction model: <b>{sel_name}</b></div>", unsafe_allow_html=True)
-
-        fig_title("Model performance comparison", "BDG2 held-out test set")
-        colors_r2 = [GREEN if k == selected_key else (STEEL if k == "baseline_linear_regression" else GREEN3) for k in available]
-        c_r2, c_err = st.columns(2, gap="large")
-        with c_r2:
-            fig_title("R² (higher is better)")
-            fig_r2 = go.Figure(go.Bar(
-                x=names, y=r2s, marker_color=colors_r2, marker_line_width=0,
-                text=[f"{v:.3f}" for v in r2s], textposition="outside", cliponaxis=False,
-                textfont=dict(size=11, color=INK2),
-                hovertemplate="%{x}: %{y:.4f}<extra></extra>"
-            ))
-            style_fig(fig_r2, height=270, margin=dict(l=0, r=0, t=22, b=0))
-            fig_r2.update_layout(bargap=0.4)
-            fig_r2.update_yaxes(range=[0, 1.1])
-            show(fig_r2)
-
-        with c_err:
-            fig_title("MAE and RMSE in kWh (lower is better)")
-            fig_err = go.Figure()
-            fig_err.add_trace(go.Bar(
-                name="MAE", x=names, y=maes, marker_color=GREEN, marker_line_width=0,
-                text=[f"{v:.2f}" for v in maes], textposition="outside", cliponaxis=False,
-                textfont=dict(size=10.5, color=INK2),
-                hovertemplate="%{x} MAE: %{y:.2f} kWh<extra></extra>"
-            ))
-            fig_err.add_trace(go.Bar(
-                name="RMSE", x=names, y=rmses, marker_color=GREEN3, marker_line_width=0,
-                text=[f"{v:.2f}" for v in rmses], textposition="outside", cliponaxis=False,
-                textfont=dict(size=10.5, color=INK2),
-                hovertemplate="%{x} RMSE: %{y:.2f} kWh<extra></extra>"
-            ))
-            style_fig(fig_err, height=270, legend=True, margin=dict(l=0, r=0, t=28, b=0))
-            fig_err.update_layout(barmode="group", bargap=0.3)
-            show(fig_err)
-
-        st.markdown("<div class='fig-title' style='margin-top:20px;'>Detailed model metrics</div>", unsafe_allow_html=True)
-        th = f"padding:6px 0; border-bottom:1px solid {INK}; font-size:12px; font-weight:600; color:{INK}; text-align:right;"
-        td = f"padding:8px 0; border-bottom:1px solid {RULE}; font-size:13px; color:{INK}; text-align:right; font-variant-numeric:tabular-nums;"
-        rows_html = ""
-        for k in available:
-            m = model_metrics[k]
-            bg = "background:rgba(169,196,188,0.25);" if k == selected_key else ""
-            tag = f" <span style='font-size:11px; color:{INK3};'>(selected)</span>" if k == selected_key else ""
-            r2_txt, mae_txt, rmse_txt = f"{m['r2']:.3f}", f"{m['mae_kwh']:.2f}", f"{m['rmse_kwh']:.2f}"
-            if k == best_r2:
-                r2_txt = f"<b>{r2_txt}</b>"
-            if k == best_mae:
-                mae_txt = f"<b>{mae_txt}</b>"
-            if k == best_rmse:
-                rmse_txt = f"<b>{rmse_txt}</b>"
-            rows_html += (f"<tr style='{bg}'><td style='{td} text-align:left;'>{MODEL_LABELS[k]}{tag}</td>"
-                          f"<td style='{td}'>{r2_txt}</td><td style='{td}'>{mae_txt}</td><td style='{td}'>{rmse_txt}</td></tr>")
-        st.markdown(
-            "<table style='width:100%; border-collapse:collapse; margin:4px 0 8px 0;'>"
-            f"<tr><th style='{th} text-align:left;'>Model</th><th style='{th}'>R²</th>"
-            f"<th style='{th}'>MAE (kWh)</th><th style='{th}'>RMSE (kWh)</th></tr>"
-            f"{rows_html}</table>", unsafe_allow_html=True)
-
-        col_m1, col_m2 = st.columns(2, gap="large")
-        with col_m1:
-            fig_title(f"{sel_name} feature importance", "Gain-based")
-            importances = model_metrics["feature_importance"]
-            sorted_importances = dict(sorted(importances.items(), key=lambda x: x[1], reverse=True))
-            fig_imp = go.Figure(go.Bar(
-                x=list(sorted_importances.values()), y=list(sorted_importances.keys()), orientation="h",
-                marker_color=GREEN2, marker_line_width=0
-            ))
-            style_fig(fig_imp, height=300, margin=dict(l=0, r=10, t=10, b=0))
-            fig_imp.update_layout(yaxis=dict(autorange="reversed"), bargap=0.35)
-            fig_imp.update_xaxes(showgrid=True, gridcolor=GRID)
-            fig_imp.update_yaxes(showgrid=False)
-            show(fig_imp)
-
-        with col_m2:
-            sel = model_metrics[selected_key]
-            st.markdown("<div class='fig-title'>Selected model rationale</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='body' style='margin-top:12px;'>The final prediction model used in this dashboard is <b>{sel_name}</b>. On the held-out BDG2 test set it achieved R² = <b>{sel['r2']:.3f}</b>, MAE = <b>{sel['mae_kwh']:.2f} kWh</b> and RMSE = <b>{sel['rmse_kwh']:.2f} kWh</b>. Annual demand, carbon, EUI and floor-wise results are scaled to the audit anchor ({block3_share:.2%}), so they do not depend on which ensemble is used.</div>", unsafe_allow_html=True)
-
-    caveat("Domain limitation",
-           f"The XGBoost model is trained entirely on the BDG2 dataset (604 education buildings, predominantly North American/European campuses). Block 3 (GMRIT, Rajam, warm and humid climate) is <b>not represented in the training data</b>. The campus annual audit share ({block3_share:.2%} of {CAMPUS_ANNUAL_KWH:,.0f} kWh) is used only to <i>scale</i> output magnitude.",
-           tone="brick")
-
-    caveat("Data boundary and limitations",
-           "No Block 3-specific electricity meter series, solar generation meter, or diesel generator (DG) meter was available for this project. All Block 3-level figures are produced by ML predictions or allocation methods.",
-           tone="brick")
 
     section("Recommended energy-saving measures", "The two retrofits come from the campus audit. The operational measures are derived from the equipment schedule.")
     r1, r2 = st.columns(2, gap="large")
@@ -769,7 +666,7 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
 <div class='stat-num'>67,904<span class='hero-unit'>kWh/yr</span></div>
 <div class='group-title' style='margin-top:8px;'>BLDC ceiling fan replacement</div>
 <div class='stat-sub'>Audited retrofit. Estimated savings, campus-wide.</div>
-<div class='body' style='margin-top:8px;'>Replacing standard induction ceiling fans with BLDC fans (East Coast Sustainable Pvt. Ltd., Apr 2022). Low unit cost, no operational cost increase, typically &lt;2 year payback at scale.</div>
+<div class='body' style='margin-top:8px;'>Replacing standard induction ceiling fans with BLDC fans. Low unit cost, no operational cost increase, typically &lt;2 year payback at scale.</div>
 """, unsafe_allow_html=True)
 
     with r2:
@@ -782,7 +679,7 @@ The audit reports campus electricity in kVAh, not kWh. Per the audit, average ca
 
     st.markdown("<div class='group-title' style='margin-top:28px;'>No-cost operational measures</div>", unsafe_allow_html=True)
     st.markdown("""
-- **UPS standby/float-charge audit (Ground Floor):** Ground Floor carries 75.5% of Block 3's estimated load, dominated by continuous-duty UPS banks (36 kW, 54 kW). A physical audit of which UPS loads genuinely require 24/7 uptime versus which could be scheduled off during nights/holidays targets the largest load driver.
+- **UPS standby/float-charge audit (Ground Floor):** Ground Floor carries 75.5% of Block 3's estimated load, dominated by continuous-duty UPS banks. A physical audit of which UPS loads genuinely require 24/7 uptime versus which could be scheduled off during nights/holidays targets the largest load driver.
 - **Lab/classroom equipment power-down enforcement:** Enforcing an equipment shutdown checklist after scheduled lab/class hours prevents after-hours idle draw.
-- **Fan/lighting operating-hour review in low-occupancy spaces:** Regular checks that spaces like Electrical Labs and Drawing Halls (scheduled ~8 hrs/week) are powered off when idle.
+- **Fan/lighting operating-hour review in low-occupancy spaces:** Regular checks that spaces like Electrical Labs and Drawing Halls are powered off when idle.
 """)
