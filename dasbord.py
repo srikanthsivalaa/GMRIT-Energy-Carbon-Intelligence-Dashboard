@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import json
 import os
-
+#updated
 st.set_page_config(
     page_title="Block 3 Energy Intelligence",
     layout="wide",
