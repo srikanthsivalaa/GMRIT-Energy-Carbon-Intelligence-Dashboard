@@ -66,12 +66,14 @@ st.markdown("""
 .stApp { background: var(--paper); color: var(--ink); font-family: 'Public Sans', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.5; }
 header[data-testid="stHeader"] { background: transparent; }
 #MainMenu, footer { visibility: hidden; }
-
-/* FIX: content now starts at the top (removed min-height:100vh + vertical centering) */
 .block-container, [data-testid="stMainBlockContainer"] {
     max-width: 1200px !important;
     margin: 0 auto;
     padding: 1.5rem 2rem 3rem 2rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 .stApp p, .stApp li, .stApp label, .stApp span { color: var(--ink); font-size: 13px; }
 
@@ -134,51 +136,19 @@ header[data-testid="stHeader"] { background: transparent; }
 /* ---- big stat ---- */
 .stat-num { font-family: 'Archivo', sans-serif; font-stretch: 85%; font-weight: 300; font-size: 38px; letter-spacing: -0.02em; line-height: 1.05; color: var(--green); font-variant-numeric: tabular-nums; }
 .stat-sub { font-size: 12.5px; color: var(--ink2); margin-top: 4px; }
-
-/* FIX: legend is a 2-column grid instead of an uneven flex-wrap row */
-.legend-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 32px; font-size: 12px; color: var(--ink); margin: 4px 0 10px 0; }
-.legend-row > span { display: block; position: relative; padding-left: 18px; line-height: 1.45; }
-.sw { position: absolute; left: 0; top: 4px; width: 10px; height: 10px; margin: 0; }
-
-/* tidy bullet lists so they align with the rest of the page */
-[data-testid="stMarkdownContainer"] ul { padding-left: 1.1rem; margin: 4px 0 0 0; }
-[data-testid="stMarkdownContainer"] li { margin-bottom: 4px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 12px; color: var(--ink); margin: 4px 0 10px 0; }
+.sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
 
 /* ---- widgets ---- */
 .stRadio [data-testid="stWidgetLabel"] p { font-size: 13px; font-weight: 600; color: var(--ink) !important; }
 .stRadio div[role="radiogroup"] { gap: 18px; }
 .stRadio div[role="radiogroup"] label p { font-size: 13px; font-weight: 500; color: var(--ink) !important; }
-
-/* FIX: expander. Newer Streamlit draws the border/background on the inner <details>,
-   so both the wrapper and <details> must be overridden. */
-[data-testid="stExpander"],
-[data-testid="stExpander"] details {
-    border: none !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-}
-[data-testid="stExpander"] details {
-    border-top: 1px solid var(--rule) !important;
-    border-bottom: 1px solid var(--rule) !important;
-}
-[data-testid="stExpander"] summary,
-[data-testid="stExpander"] summary:hover,
-[data-testid="stExpander"] summary:focus,
-[data-testid="stExpander"] summary:active {
-    background: transparent !important;
-    outline: none !important;
-    box-shadow: none !important;
-}
+[data-testid="stExpander"] { border: none; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); border-radius: 0; background: transparent; }
 [data-testid="stExpander"] summary p { font-weight: 600; font-size: 13px; }
-[data-testid="stExpander"] summary:hover p { color: var(--green); }
-
-/* FIX: global focus ring no longer hits the expander header */
 :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
-[data-testid="stExpander"] summary:focus-visible { outline: none !important; }
 
 @media (max-width: 860px) {
-  .hero, .prose2, .ledger-cols, .ledger-cols.three, .legend-row { grid-template-columns: 1fr; gap: 20px; }
+  .hero, .prose2, .ledger-cols, .ledger-cols.three { grid-template-columns: 1fr; gap: 20px; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -684,7 +654,7 @@ with tab_audit:
     caveat("Temporal scope",
            f"The audit baseline (connected load, diesel, solar generation) is <b>Apr 2021–Feb 2022 (11 billed months, annualised ×12/11)</b>. The weather dataset used to drive the ML model is <b>Jul 2025–Jul 2026</b> (NASA POWER, local solar time). These are different periods. The annual Block 3 electricity figure on this dashboard is therefore a <b>scaled scenario estimate</b>: the model's weather-driven pattern for a recent year, rescaled to match Block 3's {BLOCK3_SHARE:.2%} share of the audited campus annual energy.")
 
-    with st.expander("Methodology and data provenance", expanded=False):
+    with st.expander("Methodology and data provenance (read before presenting)", expanded=False):
         st.markdown(f"""
 **How is Block 3's annual electricity (~{total_kwh/1e3:.0f} MWh) derived, and how does it relate to the campus audit total ({CAMPUS_ANNUAL_KWH:,.0f} kWh/yr)?**
 
@@ -711,38 +681,6 @@ with tab_audit:
 <div class='stat-sub'>Audited retrofit. Estimated savings, campus-wide.</div>
 <div class='body' style='margin-top:8px;'>Audit estimate for 19 sodium-vapor lamps campus-wide (250 W to 150 W): investment ₹19,000, savings ₹45,052/yr, payback 5 months.</div>
 """, unsafe_allow_html=True)
-
-    # ---- retrofit bar charts ----
-    retro_names = ["BLDC ceiling fans", "SV-to-LED lamps"]
-    retro_kwh = [67_904, 1_976]
-    retro_payback = [148, 5]
-
-    ch1, ch2 = st.columns(2, gap="large")
-    with ch1:
-        fig_title("Annual energy saving", "kWh/yr, campus-wide, from the audit")
-        fig_r1 = go.Figure(go.Bar(
-            x=retro_names, y=retro_kwh,
-            marker_color=[GREEN, GREEN2], marker_line_width=0,
-            text=[f"{v:,}" for v in retro_kwh],
-            textposition="outside", cliponaxis=False, textfont=dict(size=11, color=INK2),
-            hovertemplate="%{x}: %{y:,.0f} kWh/yr<extra></extra>"
-        ))
-        style_fig(fig_r1, height=280, margin=dict(l=0, r=0, t=22, b=0))
-        fig_r1.update_layout(bargap=0.55, yaxis_title="kWh/yr")
-        show(fig_r1)
-    with ch2:
-        fig_title("Payback period", "Months, from the audit")
-        fig_r2 = go.Figure(go.Bar(
-            x=retro_names, y=retro_payback,
-            marker_color=[STEEL, GREEN3], marker_line_width=0,
-            text=[f"{v} months" for v in retro_payback],
-            textposition="outside", cliponaxis=False, textfont=dict(size=11, color=INK2),
-            hovertemplate="%{x}: %{y} months<extra></extra>"
-        ))
-        style_fig(fig_r2, height=280, margin=dict(l=0, r=0, t=22, b=0))
-        fig_r2.update_layout(bargap=0.55, yaxis_title="Months")
-        show(fig_r2)
-    note("Both charts use audit figures for the whole campus, not Block 3 alone.")
 
     st.markdown("<div class='group-title' style='margin-top:28px;'>No-cost operational measures</div>", unsafe_allow_html=True)
     st.markdown("""
